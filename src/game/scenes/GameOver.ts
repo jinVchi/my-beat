@@ -4,58 +4,60 @@
 
 import Phaser from "phaser";
 /* START-USER-IMPORTS */
-import { EventBus } from '../EventBus';
+import { EventBus } from "../EventBus";
 /* END-USER-IMPORTS */
 
 export default class GameOver extends Phaser.Scene {
+  constructor() {
+    super("GameOver");
 
-	constructor() {
-		super("GameOver");
+    /* START-USER-CTR-CODE */
+    // Write your code here.
+    /* END-USER-CTR-CODE */
+  }
 
-		/* START-USER-CTR-CODE */
-		// Write your code here.
-		/* END-USER-CTR-CODE */
-	}
+  editorCreate(): void {
+    // background
+    const background = this.add.image(512, 384, "background");
+    background.alpha = 0.5;
+    background.alphaTopLeft = 0.5;
+    background.alphaTopRight = 0.5;
+    background.alphaBottomLeft = 0.5;
+    background.alphaBottomRight = 0.5;
 
-	editorCreate(): void {
+    // textgameover
+    const textgameover = this.add.text(512, 384, "", {});
+    textgameover.setOrigin(0.5, 0.5);
+    textgameover.text = "Game Over";
+    textgameover.setStyle({
+      align: "center",
+      color: "#ffffff",
+      fontFamily: "Arial Black",
+      fontSize: "64px",
+      stroke: "#000000",
+      strokeThickness: 8,
+    });
 
-		// background
-		const background = this.add.image(512, 384, "background");
-		background.alpha = 0.5;
-		background.alphaTopLeft = 0.5;
-		background.alphaTopRight = 0.5;
-		background.alphaBottomLeft = 0.5;
-		background.alphaBottomRight = 0.5;
+    this.events.emit("scene-awake");
+  }
 
-		// textgameover
-		const textgameover = this.add.text(512, 384, "", {});
-		textgameover.setOrigin(0.5, 0.5);
-		textgameover.text = "Game Over";
-		textgameover.setStyle({ "align": "center", "color": "#ffffff", "fontFamily": "Arial Black", "fontSize": "64px", "stroke": "#000000", "strokeThickness":8});
+  /* START-USER-CODE */
 
-		this.events.emit("scene-awake");
-	}
+  // Write your code here
 
-	/* START-USER-CODE */
+  create() {
+    this.editorCreate();
 
-	// Write your code here
+    this.cameras.main.setBackgroundColor(0xff0000);
 
-	create() {
+    EventBus.emit("current-scene-ready", this);
+  }
 
-		this.editorCreate();
+  changeScene() {
+    this.scene.start("MainMenu");
+  }
 
-        this.cameras.main.setBackgroundColor(0xff0000);
-
-        EventBus.emit('current-scene-ready', this);
-
-	}
-
-    changeScene ()
-    {
-        this.scene.start('MainMenu');
-    }
-
-	/* END-USER-CODE */
+  /* END-USER-CODE */
 }
 
 /* END OF COMPILED CODE */

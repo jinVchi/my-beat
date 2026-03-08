@@ -7,68 +7,66 @@ import Phaser from "phaser";
 /* END-USER-IMPORTS */
 
 export default class Preloader extends Phaser.Scene {
+  constructor() {
+    super("Preloader");
 
-	constructor() {
-		super("Preloader");
+    /* START-USER-CTR-CODE */
+    // Write your code here.
+    /* END-USER-CTR-CODE */
+  }
 
-		/* START-USER-CTR-CODE */
-		// Write your code here.
-		/* END-USER-CTR-CODE */
-	}
+  editorCreate(): void {
+    // background
+    this.add.image(512, 384, "background");
 
-	editorCreate(): void {
+    // progressBar
+    const progressBar = this.add.rectangle(512, 384, 468, 32);
+    progressBar.isFilled = true;
+    progressBar.fillColor = 14737632;
+    progressBar.isStroked = true;
 
-		// background
-		this.add.image(512, 384, "background");
+    this.progressBar = progressBar;
 
-		// progressBar
-		const progressBar = this.add.rectangle(512, 384, 468, 32);
-		progressBar.isFilled = true;
-		progressBar.fillColor = 14737632;
-		progressBar.isStroked = true;
+    this.events.emit("scene-awake");
+  }
 
-		this.progressBar = progressBar;
+  private progressBar!: Phaser.GameObjects.Rectangle;
 
-		this.events.emit("scene-awake");
-	}
+  /* START-USER-CODE */
 
-	private progressBar!: Phaser.GameObjects.Rectangle;
+  // Write your code here
+  init() {
+    this.editorCreate();
 
-	/* START-USER-CODE */
+    //  This is the progress bar itself. It will increase in size from the left based on the % of progress.
+    const bar = this.add.rectangle(
+      this.progressBar.x - this.progressBar.width / 2 + 4,
+      this.progressBar.y,
+      4,
+      28,
+      0xffffff,
+    );
 
-	// Write your code here
-    init ()
-    {
+    //  Use the 'progress' event emitted by the LoaderPlugin to update the loading bar
+    this.load.on("progress", (progress: number) => {
+      //  Update the progress bar (our bar is 464px wide, so 100% = 464px)
+      bar.width = 4 + 460 * progress;
+    });
+  }
 
-		this.editorCreate();
+  preload() {
+    // Use the 'pack' file to load in any assets you need for this scene
+    this.load.pack("preload", "assets/preload-asset-pack.json");
+  }
 
-        //  This is the progress bar itself. It will increase in size from the left based on the % of progress.
-        const bar = this.add.rectangle(this.progressBar.x - this.progressBar.width / 2 + 4, this.progressBar.y, 4, 28, 0xffffff)
+  create() {
+    //  When all the assets have loaded, it's often worth creating global objects here that the rest of the game can use.
+    //  For example, you can define global animations here, so we can use them in other scenes.
 
-        //  Use the 'progress' event emitted by the LoaderPlugin to update the loading bar
-        this.load.on('progress', (progress: number) => {
-
-            //  Update the progress bar (our bar is 464px wide, so 100% = 464px)
-            bar.width = 4 + (460 * progress);
-
-        });
-    }
-
-    preload ()
-    {
-        // Use the 'pack' file to load in any assets you need for this scene
-        this.load.pack('preload', 'assets/preload-asset-pack.json');
-    }
-
-    create ()
-    {
-        //  When all the assets have loaded, it's often worth creating global objects here that the rest of the game can use.
-        //  For example, you can define global animations here, so we can use them in other scenes.
-
-        //  Move to the MainMenu. You could also swap this for a Scene Transition, such as a camera fade.
-        this.scene.start('MainMenu');
-    }
-    /* END-USER-CODE */
+    //  Move to the MainMenu. You could also swap this for a Scene Transition, such as a camera fade.
+    this.scene.start("MainMenu");
+  }
+  /* END-USER-CODE */
 }
 
 /* END OF COMPILED CODE */
