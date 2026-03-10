@@ -50,6 +50,22 @@ export default class GameOver extends Phaser.Scene {
 
     this.cameras.main.setBackgroundColor(0xff0000);
 
+    const returnBtn = this.add
+      .text(512, 500, "Return to Menu", {
+        align: "center",
+        color: "#ffffff",
+        fontFamily: "Arial Black",
+        fontSize: "32px",
+        stroke: "#000000",
+        strokeThickness: 6,
+      })
+      .setOrigin(0.5, 0.5)
+      .setInteractive({ useHandCursor: true });
+
+    returnBtn.on("pointerover", () => returnBtn.setStyle({ color: "#ffff00" }));
+    returnBtn.on("pointerout", () => returnBtn.setStyle({ color: "#ffffff" }));
+    returnBtn.on("pointerdown", () => this.changeScene());
+
     EventBus.emit("current-scene-ready", this);
   }
 
