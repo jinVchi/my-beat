@@ -6,13 +6,13 @@ import Enemy from "../entities/Enemy";
 const FLOOR_TOP = 450;
 const FLOOR_BOTTOM = 740;
 
-export default class Game extends Phaser.Scene {
+export default class Game2 extends Phaser.Scene {
   private player!: Player;
   private enemies: Enemy[] = [];
   private depthSortGroup: Phaser.GameObjects.Container[] = [];
 
   constructor() {
-    super("Game");
+    super("Game2");
   }
 
   create() {
@@ -26,12 +26,6 @@ export default class Game extends Phaser.Scene {
 
   update(time: number, delta: number) {
     this.player.update(time, delta);
-
-    if (this.player.x > 990) {
-      this.scene.start("Game2");
-      return;
-    }
-
     this.clampToFloor(this.player);
     this.depthSort();
   }
@@ -39,28 +33,28 @@ export default class Game extends Phaser.Scene {
   private drawBackground() {
     const g = this.add.graphics();
 
-    // Sky
-    g.fillStyle(0x4488cc);
+    // Sky - darker/evening tone for second scene
+    g.fillStyle(0x334488);
     g.fillRect(0, 0, 1024, 300);
 
     // Distant buildings silhouette
-    g.fillStyle(0x334455);
-    g.fillRect(0, 200, 120, 100);
-    g.fillRect(100, 170, 80, 130);
-    g.fillRect(200, 210, 100, 90);
-    g.fillRect(320, 180, 60, 120);
-    g.fillRect(400, 200, 140, 100);
-    g.fillRect(560, 190, 70, 110);
-    g.fillRect(650, 210, 110, 90);
-    g.fillRect(780, 175, 90, 125);
-    g.fillRect(890, 200, 134, 100);
+    g.fillStyle(0x223344);
+    g.fillRect(0, 190, 100, 110);
+    g.fillRect(120, 160, 90, 140);
+    g.fillRect(230, 205, 110, 95);
+    g.fillRect(360, 175, 70, 125);
+    g.fillRect(450, 195, 150, 105);
+    g.fillRect(620, 185, 80, 115);
+    g.fillRect(720, 205, 120, 95);
+    g.fillRect(860, 170, 100, 130);
+    g.fillRect(980, 195, 44, 105);
 
     // Wall / back area
-    g.fillStyle(0x666655);
+    g.fillStyle(0x555566);
     g.fillRect(0, 300, 1024, 150);
 
     // Wall details - bricks pattern
-    g.lineStyle(1, 0x555544, 0.4);
+    g.lineStyle(1, 0x444455, 0.4);
     for (let row = 0; row < 5; row++) {
       const y = 300 + row * 30;
       g.strokeLineShape(new Phaser.Geom.Line(0, y, 1024, y));
@@ -71,43 +65,45 @@ export default class Game extends Phaser.Scene {
     }
 
     // Floor / street
-    g.fillStyle(0x888877);
+    g.fillStyle(0x777788);
     g.fillRect(0, FLOOR_TOP, 1024, FLOOR_BOTTOM - FLOOR_TOP + 28);
 
     // Sidewalk edge
-    g.fillStyle(0x999988);
+    g.fillStyle(0x888899);
     g.fillRect(0, FLOOR_TOP, 1024, 12);
 
     // Street lane markings
-    g.lineStyle(2, 0xaaaa88, 0.3);
+    g.lineStyle(2, 0x9999aa, 0.3);
     for (let x = 0; x < 1024; x += 80) {
       g.strokeLineShape(new Phaser.Geom.Line(x, 600, x + 40, 600));
     }
+
+    // Scene label
+    this.add
+      .text(512, 30, "STAGE 2", {
+        fontSize: "20px",
+        color: "#aaaaff",
+        fontFamily: "Arial Black",
+        stroke: "#000000",
+        strokeThickness: 4,
+      })
+      .setOrigin(0.5, 0);
 
     g.setDepth(-1);
   }
 
   private spawnPlayer() {
-    this.player = new Player(this, 150, 580);
+    this.player = new Player(this, 80, 580);
     this.depthSortGroup.push(this.player);
-
-    // Right-edge exit hint
-    this.add
-      .text(1010, 580, "▶", {
-        fontSize: "28px",
-        color: "#ffff44",
-        stroke: "#000000",
-        strokeThickness: 3,
-      })
-      .setOrigin(0.5, 0.5)
-      .setDepth(1000);
   }
 
   private spawnEnemies() {
     const positions = [
-      { x: 500, y: 540 },
-      { x: 700, y: 620 },
-      { x: 850, y: 560 },
+      { x: 400, y: 520 },
+      { x: 600, y: 580 },
+      { x: 750, y: 540 },
+      { x: 880, y: 610 },
+      { x: 550, y: 650 },
     ];
 
     for (const pos of positions) {
@@ -133,7 +129,6 @@ export default class Game extends Phaser.Scene {
 
         if (this.physics.overlap(hitbox, enemy)) {
           enemy.takeDamage(this.player.getAttackDamage());
-          // One hit per attack swing
           this.player.attackHitbox?.destroy();
           this.player.attackHitbox = null;
           break;
@@ -151,9 +146,7 @@ export default class Game extends Phaser.Scene {
   }
 
   private depthSort() {
-    // Remove destroyed objects
     this.depthSortGroup = this.depthSortGroup.filter((obj) => obj.active);
-
     for (const obj of this.depthSortGroup) {
       obj.setDepth(obj.y);
     }
