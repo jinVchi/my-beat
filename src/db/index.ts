@@ -1,5 +1,5 @@
-import { drizzle } from "drizzle-orm/mysql2";
-import { createPool, type Pool } from "mysql2/promise";
+import { drizzle } from "drizzle-orm/node-postgres";
+import { Pool, type Pool as PgPool } from "pg";
 import * as schema from "./schema";
 
 const connectionString = process.env.DATABASE_URL;
@@ -9,14 +9,14 @@ if (!connectionString) {
 }
 
 const globalForDb = globalThis as typeof globalThis & {
-  dbPool?: Pool;
+  dbPool?: PgPool;
 };
 
 const pool =
   globalForDb.dbPool ??
-  createPool({
-    uri: connectionString,
-    connectionLimit: 10,
+  new Pool({
+    connectionString,
+    max: 10,
   });
 
 if (process.env.NODE_ENV !== "production") {
@@ -26,7 +26,6 @@ if (process.env.NODE_ENV !== "production") {
 export const db = drizzle({
   client: pool,
   schema,
-  mode: "default",
 });
 
 export type Database = typeof db;
