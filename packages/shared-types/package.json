@@ -1,0 +1,12 @@
+{
+  "name": "@my-beat/shared-types",
+  "version": "1.0.0",
+  "private": true,
+  "exports": {
+    "./game-config": "./src/game-config.ts",
+    "./messages": "./src/messages.ts"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  }
+}

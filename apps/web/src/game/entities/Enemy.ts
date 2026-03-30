@@ -1,11 +1,13 @@
 import Phaser from "phaser";
+import {
+  ENEMY_BODY_WIDTH,
+  ENEMY_BODY_HEIGHT,
+} from "@my-beat/shared-types/game-config";
 
-const BODY_WIDTH = 40;
-const BODY_HEIGHT = 64;
+const BODY_WIDTH = ENEMY_BODY_WIDTH;
+const BODY_HEIGHT = ENEMY_BODY_HEIGHT;
 
 export default class Enemy extends Phaser.GameObjects.Container {
-  body!: Phaser.Physics.Arcade.Body;
-
   private bodyRect: Phaser.GameObjects.Rectangle;
   private label: Phaser.GameObjects.Text;
   private healthBarBg: Phaser.GameObjects.Rectangle;
@@ -64,23 +66,22 @@ export default class Enemy extends Phaser.GameObjects.Container {
     this.add(this.healthBarFill);
 
     scene.add.existing(this);
-    scene.physics.add.existing(this);
-
-    this.body.setSize(BODY_WIDTH, BODY_HEIGHT);
-    this.body.setOffset(-BODY_WIDTH / 2, -BODY_HEIGHT / 2);
-    this.body.setImmovable(true);
-
     this.setSize(BODY_WIDTH, BODY_HEIGHT);
   }
 
-  takeDamage(amount: number) {
+  updateFromServer(health: number, isDead: boolean): void {
     if (this.isDead) return;
 
-    this.health = Math.max(0, this.health - amount);
-    this.updateHealthBar();
-    this.flashHit();
+    const previousHealth = this.health;
+    this.health = health;
 
-    if (this.health <= 0) {
+    if (health < previousHealth) {
+      this.flashHit();
+    }
+
+    this.updateHealthBar();
+
+    if (isDead && !this.isDead) {
       this.die();
     }
   }
@@ -118,9 +119,5 @@ export default class Enemy extends Phaser.GameObjects.Container {
         this.destroy();
       },
     });
-  }
-
-  getIsDead(): boolean {
-    return this.isDead;
   }
 }

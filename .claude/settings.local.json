@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(wc -l /d/Code/MyGame/my-beat/src/game/scenes/*.ts)",
+      "Bash(npm install:*)",
+      "Bash(timeout 5 npx tsx apps/game-server/src/index.ts)",
+      "Bash(npm --version)",
+      "Bash(timeout 10 npm run dev)"
+    ]
+  }
+}
