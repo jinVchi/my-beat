@@ -8,7 +8,7 @@ Server-authoritative multiplayer beat'em up web game. Players worldwide connect 
 
 - **Frontend:** Next.js (App Router) + Phaser 3, TypeScript
 - **Global Server:** Next.js API routes
-- **Game Server:** Node.js + uWebSockets.js, TypeScript
+- **Game Server:** Node.js + ws, TypeScript
 - **Auth:** Better Auth (session in PostgreSQL)
 - **ORM:** Drizzle
 - **Database:** PostgreSQL (single global instance)

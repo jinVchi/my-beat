@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "node log.js dev & next dev -p 8080",
+    "dev": "node log.js dev & next dev -p 3001",
     "build": "next build",
     "lint": "eslint .",
     "db:generate": "drizzle-kit generate",
