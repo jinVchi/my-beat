@@ -6,6 +6,7 @@ import { RemotePlayer } from "../entities/RemotePlayer";
 import { GameClient } from "../network/ws-client";
 import { InputFlag, type GameSnapshot, type PlayerState } from "@my-beat/shared-types/messages";
 import { FLOOR_TOP, FLOOR_BOTTOM } from "@my-beat/shared-types/game-config";
+import { addCornerQuitButton } from "../ui/corner-quit";
 
 export default class Game extends Phaser.Scene {
   private player!: Player;
@@ -67,6 +68,7 @@ export default class Game extends Phaser.Scene {
     });
 
     this.gameClient.connect("default");
+    addCornerQuitButton(this, () => this.changeScene());
     EventBus.emit("current-scene-ready", this);
   }
 

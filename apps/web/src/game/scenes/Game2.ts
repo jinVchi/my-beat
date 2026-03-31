@@ -1,5 +1,6 @@
 import Phaser from "phaser";
 import { EventBus } from "../EventBus";
+import { addCornerQuitButton } from "../ui/corner-quit";
 
 export default class Game2 extends Phaser.Scene {
   constructor() {
@@ -18,6 +19,7 @@ export default class Game2 extends Phaser.Scene {
       })
       .setOrigin(0.5, 0.5);
 
+    addCornerQuitButton(this, () => this.changeScene());
     EventBus.emit("current-scene-ready", this);
   }
 

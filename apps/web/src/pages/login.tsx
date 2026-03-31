@@ -40,7 +40,11 @@ export default function LoginPage() {
           return;
         }
       }
-      router.push("/");
+      // Small delay to let the session cookie propagate before navigating,
+      // otherwise useSession() on the index page may not see it yet and
+      // redirect back to /login.
+      await new Promise((r) => setTimeout(r, 200));
+      window.location.href = "/";
     } catch {
       setError("Something went wrong. Please try again.");
       setLoading(false);
