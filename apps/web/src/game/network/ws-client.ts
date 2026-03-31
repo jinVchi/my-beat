@@ -27,8 +27,17 @@ export class GameClient {
     this.callbacks = callbacks;
   }
 
-  connect(roomId: string): void {
-    const url = `ws://localhost:${GAME_SERVER_PORT}`;
+  async connect(roomId: string): Promise<void> {
+    // Fetch a session token to authenticate with the game server
+    const tokenRes = await fetch("/api/game-token");
+    if (!tokenRes.ok) {
+      console.error("Failed to get game token — not authenticated");
+      this.callbacks.onDisconnect();
+      return;
+    }
+    const { token } = (await tokenRes.json()) as { token: string };
+
+    const url = `ws://localhost:${GAME_SERVER_PORT}?token=${encodeURIComponent(token)}`;
     this.ws = new WebSocket(url);
     this.ws.binaryType = "arraybuffer";
 

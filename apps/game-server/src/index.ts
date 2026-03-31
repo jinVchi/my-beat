@@ -1,9 +1,25 @@
+import { createServer } from "http";
 import { WebSocketServer, WebSocket } from "ws";
-import { nanoid } from "nanoid";
 import { GAME_SERVER_PORT } from "@my-beat/shared-types/game-config";
 import { ClientMsgType, ServerMsgType } from "@my-beat/shared-types/messages";
 import { decodeClientMessage, encodeMessage } from "@my-beat/netcode/serializer";
 import { GameLoop } from "./game-loop";
+
+const AUTH_VERIFY_URL =
+  process.env.AUTH_VERIFY_URL ?? "http://localhost:3001/api/auth/verify";
+
+type VerifiedUser = { id: string; name: string; email: string };
+
+async function verifyToken(token: string): Promise<VerifiedUser | null> {
+  try {
+    const res = await fetch(`${AUTH_VERIFY_URL}?token=${encodeURIComponent(token)}`);
+    if (!res.ok) return null;
+    const data = (await res.json()) as { user: VerifiedUser };
+    return data.user;
+  } catch {
+    return null;
+  }
+}
 
 const gameLoop = new GameLoop();
 
@@ -14,12 +30,40 @@ gameLoop.createRoom("default", [
   { x: 850, y: 560 },
 ]);
 
-const wss = new WebSocketServer({ port: GAME_SERVER_PORT });
+const server = createServer();
+const wss = new WebSocketServer({ noServer: true });
 
 const playerData = new Map<WebSocket, { playerId: string; roomId: string }>();
 
-wss.on("connection", (ws) => {
-  const playerId = nanoid(12);
+// Cache verified users by their user ID
+const verifiedUsers = new Map<string, VerifiedUser>();
+
+server.on("upgrade", async (req, socket, head) => {
+  const url = new URL(req.url ?? "/", `http://localhost:${GAME_SERVER_PORT}`);
+  const token = url.searchParams.get("token");
+
+  if (!token) {
+    socket.write("HTTP/1.1 401 Unauthorized\r\n\r\n");
+    socket.destroy();
+    return;
+  }
+
+  const user = await verifyToken(token);
+  if (!user) {
+    console.log("Auth verification failed for token:", token.slice(0, 8) + "...");
+    socket.write("HTTP/1.1 401 Unauthorized\r\n\r\n");
+    socket.destroy();
+    return;
+  }
+
+  wss.handleUpgrade(req, socket, head, (ws) => {
+    verifiedUsers.set(user.id, user);
+    wss.emit("connection", ws, user);
+  });
+});
+
+wss.on("connection", (ws: WebSocket, user: VerifiedUser) => {
+  const playerId = user.id;
   const roomId = "default";
 
   playerData.set(ws, { playerId, roomId });
@@ -32,7 +76,7 @@ wss.on("connection", (ws) => {
 
   room.addPlayer(playerId, ws);
   console.log(
-    `Player ${playerId} joined room ${roomId} (${room.playerCount} players)`,
+    `Player ${user.name} (${playerId}) joined room ${roomId} (${room.playerCount} players)`,
   );
 
   ws.on("message", (data: Buffer) => {
@@ -72,10 +116,13 @@ wss.on("connection", (ws) => {
           `Player ${pd.playerId} left room ${pd.roomId} (${r.playerCount} players)`,
         );
       }
+      verifiedUsers.delete(pd.playerId);
       playerData.delete(ws);
     }
   });
 });
 
-console.log(`Game server listening on ws://localhost:${GAME_SERVER_PORT}`);
+server.listen(GAME_SERVER_PORT, () => {
+  console.log(`Game server listening on ws://localhost:${GAME_SERVER_PORT}`);
+});
 gameLoop.start();
