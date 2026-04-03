@@ -30,3 +30,21 @@ export const WORLD_RIGHT = 994;
 export const SERVER_TICK_RATE = 60;
 export const SERVER_TICK_MS = 1000 / SERVER_TICK_RATE;
 export const GAME_SERVER_PORT = 3002;
+
+// Matchmaking
+export const MAX_PLAYERS_PER_ROOM = 4;
+
+// Regions
+export type RegionId = "JP" | "US" | "EU";
+
+export type RegionInfo = {
+  id: RegionId;
+  label: string;
+  wsUrl: string;
+};
+
+export const REGIONS: RegionInfo[] = [
+  { id: "JP", label: "Japan", wsUrl: `ws://localhost:${GAME_SERVER_PORT}` },
+  { id: "US", label: "US West", wsUrl: `ws://localhost:${GAME_SERVER_PORT}` },
+  { id: "EU", label: "Europe", wsUrl: `ws://localhost:${GAME_SERVER_PORT}` },
+];

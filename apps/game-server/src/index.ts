@@ -1,6 +1,7 @@
-import { createServer } from "http";
+import { createServer, type IncomingMessage, type ServerResponse } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { GAME_SERVER_PORT } from "@my-beat/shared-types/game-config";
+import type { RegionId } from "@my-beat/shared-types/game-config";
 import { ClientMsgType, ServerMsgType } from "@my-beat/shared-types/messages";
 import { decodeClientMessage, encodeMessage } from "@my-beat/netcode/serializer";
 import { GameLoop } from "./game-loop";
@@ -21,29 +22,64 @@ async function verifyToken(token: string): Promise<VerifiedUser | null> {
   }
 }
 
+const VALID_REGIONS = new Set<RegionId>(["JP", "US", "EU"]);
+
 const gameLoop = new GameLoop();
 
-// Create default room with Stage 1 enemy positions
-gameLoop.createRoom("default", [
-  { x: 500, y: 540 },
-  { x: 700, y: 620 },
-  { x: 850, y: 560 },
-]);
-
-const server = createServer();
-const wss = new WebSocketServer({ noServer: true });
-
 const playerData = new Map<WebSocket, { playerId: string; roomId: string }>();
-
-// Cache verified users by their user ID
 const verifiedUsers = new Map<string, VerifiedUser>();
+
+// --------------- HTTP endpoints ---------------
+
+function handleHttp(req: IncomingMessage, res: ServerResponse): void {
+  const url = new URL(req.url ?? "/", `http://localhost:${GAME_SERVER_PORT}`);
+
+  if (req.method === "GET" && url.pathname === "/rooms") {
+    const region = url.searchParams.get("region") as RegionId | null;
+    const rooms = gameLoop.listRooms(region ?? undefined);
+    res.writeHead(200, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ rooms }));
+    return;
+  }
+
+  if (req.method === "POST" && url.pathname === "/matchmaking/join") {
+    let body = "";
+    req.on("data", (chunk) => (body += chunk));
+    req.on("end", () => {
+      try {
+        const { region } = JSON.parse(body) as { region: string };
+        if (!VALID_REGIONS.has(region as RegionId)) {
+          res.writeHead(400, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: "Invalid region" }));
+          return;
+        }
+        const room = gameLoop.findOrCreateRoom(region as RegionId);
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ roomId: room.id }));
+      } catch {
+        res.writeHead(400, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "Bad request" }));
+      }
+    });
+    return;
+  }
+
+  res.writeHead(404);
+  res.end();
+}
+
+// --------------- WebSocket ---------------
+
+const server = createServer(handleHttp);
+const wss = new WebSocketServer({ noServer: true });
 
 server.on("upgrade", async (req, socket, head) => {
   const url = new URL(req.url ?? "/", `http://localhost:${GAME_SERVER_PORT}`);
   const token = url.searchParams.get("token");
+  const roomId = url.searchParams.get("roomId");
 
-  if (!token) {
-    socket.write("HTTP/1.1 401 Unauthorized\r\n\r\n");
+  if (!token || !roomId) {
+    socket.write("HTTP/1.1 400 Bad Request\r\n\r\n");
     socket.destroy();
     return;
   }
@@ -56,24 +92,25 @@ server.on("upgrade", async (req, socket, head) => {
     return;
   }
 
-  wss.handleUpgrade(req, socket, head, (ws) => {
-    verifiedUsers.set(user.id, user);
-    wss.emit("connection", ws, user);
-  });
-});
-
-wss.on("connection", (ws: WebSocket, user: VerifiedUser) => {
-  const playerId = user.id;
-  const roomId = "default";
-
-  playerData.set(ws, { playerId, roomId });
-
   const room = gameLoop.getRoom(roomId);
   if (!room) {
-    ws.close();
+    socket.write("HTTP/1.1 404 Not Found\r\n\r\n");
+    socket.destroy();
     return;
   }
 
+  wss.handleUpgrade(req, socket, head, (ws) => {
+    verifiedUsers.set(user.id, user);
+    wss.emit("connection", ws, user, roomId);
+  });
+});
+
+wss.on("connection", (ws: WebSocket, user: VerifiedUser, roomId: string) => {
+  const playerId = user.id;
+
+  playerData.set(ws, { playerId, roomId });
+
+  const room = gameLoop.getRoom(roomId)!;
   room.addPlayer(playerId, ws);
   console.log(
     `Player ${user.name} (${playerId}) joined room ${roomId} (${room.playerCount} players)`,

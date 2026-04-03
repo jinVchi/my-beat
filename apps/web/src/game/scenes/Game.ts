@@ -7,6 +7,7 @@ import { GameClient } from "../network/ws-client";
 import { InputFlag, type GameSnapshot, type PlayerState } from "@my-beat/shared-types/messages";
 import { FLOOR_TOP, FLOOR_BOTTOM } from "@my-beat/shared-types/game-config";
 import { addCornerQuitButton } from "../ui/corner-quit";
+import { getSelectedRegion } from "../state/region-store";
 
 export default class Game extends Phaser.Scene {
   private player!: Player;
@@ -67,8 +68,13 @@ export default class Game extends Phaser.Scene {
       },
     });
 
-    this.gameClient.connect("default");
+    const region = getSelectedRegion();
+    this.gameClient.connect(region?.id ?? "JP");
     addCornerQuitButton(this, () => this.changeScene());
+
+    this.events.on("shutdown", () => this.gameClient.disconnect());
+    this.events.on("destroy", () => this.gameClient.disconnect());
+
     EventBus.emit("current-scene-ready", this);
   }
 
@@ -86,7 +92,11 @@ export default class Game extends Phaser.Scene {
   }
 
   private applySnapshot(snapshot: GameSnapshot): void {
-    if (!this.scene.isActive()) return;
+    try {
+      if (!this.scene?.isActive()) return;
+    } catch {
+      return;
+    }
 
     // Update local player
     const localState = snapshot.players.find((p) => p.id === this.localPlayerId);

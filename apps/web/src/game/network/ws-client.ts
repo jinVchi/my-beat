@@ -7,7 +7,7 @@ import {
   type GameSnapshot,
   type PlayerState,
 } from "@my-beat/shared-types/messages";
-import { GAME_SERVER_PORT } from "@my-beat/shared-types/game-config";
+import type { RegionId } from "@my-beat/shared-types/game-config";
 
 export type GameClientCallbacks = {
   onJoined: (playerId: string, snapshot: GameSnapshot) => void;
@@ -27,8 +27,21 @@ export class GameClient {
     this.callbacks = callbacks;
   }
 
-  async connect(roomId: string): Promise<void> {
-    // Fetch a session token to authenticate with the game server
+  async connect(region: RegionId): Promise<void> {
+    // Ask matchmaking for a room in this region
+    const mmRes = await fetch("/api/matchmaking/join", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ region }),
+    });
+    if (!mmRes.ok) {
+      console.error("Matchmaking failed");
+      this.callbacks.onDisconnect();
+      return;
+    }
+    const { wsUrl, roomId } = (await mmRes.json()) as { wsUrl: string; roomId: string };
+
+    // Get auth token for the game server
     const tokenRes = await fetch("/api/game-token");
     if (!tokenRes.ok) {
       console.error("Failed to get game token — not authenticated");
@@ -37,7 +50,7 @@ export class GameClient {
     }
     const { token } = (await tokenRes.json()) as { token: string };
 
-    const url = `ws://localhost:${GAME_SERVER_PORT}?token=${encodeURIComponent(token)}`;
+    const url = `${wsUrl}?token=${encodeURIComponent(token)}&roomId=${encodeURIComponent(roomId)}`;
     this.ws = new WebSocket(url);
     this.ws.binaryType = "arraybuffer";
 

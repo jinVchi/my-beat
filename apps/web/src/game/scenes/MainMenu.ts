@@ -5,6 +5,8 @@
 import Phaser from "phaser";
 /* START-USER-IMPORTS */
 import { EventBus } from "../EventBus";
+import { REGIONS, type RegionInfo } from "@my-beat/shared-types/game-config";
+import { setSelectedRegion } from "../state/region-store";
 /* END-USER-IMPORTS */
 
 export default class MainMenu extends Phaser.Scene {
@@ -27,7 +29,7 @@ export default class MainMenu extends Phaser.Scene {
     this.editorCreate();
 
     this.add
-      .text(512, 300, "My Beat'em up", {
+      .text(512, 260, "My Beat'em up", {
         align: "center",
         color: "#ffffff",
         fontFamily: "Arial Black",
@@ -37,26 +39,42 @@ export default class MainMenu extends Phaser.Scene {
       })
       .setOrigin(0.5, 0.5);
 
-    const startBtn = this.add
-      .text(512, 400, "Start Game", {
+    this.add
+      .text(512, 340, "Select Region", {
         align: "center",
-        color: "#ffffff",
+        color: "#a0a0b0",
         fontFamily: "Arial Black",
-        fontSize: "32px",
-        stroke: "#000000",
-        strokeThickness: 6,
+        fontSize: "22px",
       })
-      .setOrigin(0.5, 0.5)
-      .setInteractive({ useHandCursor: true });
+      .setOrigin(0.5, 0.5);
 
-    startBtn.on("pointerover", () => startBtn.setStyle({ color: "#ffff00" }));
-    startBtn.on("pointerout", () => startBtn.setStyle({ color: "#ffffff" }));
-    startBtn.on("pointerdown", () => this.changeScene());
+    const spacing = 140;
+    const startX = 512 - spacing;
+
+    REGIONS.forEach((region, i) => {
+      const x = startX + i * spacing;
+      const btn = this.add
+        .text(x, 420, `${region.id}\n${region.label}`, {
+          align: "center",
+          color: "#ffffff",
+          fontFamily: "Arial Black",
+          fontSize: "24px",
+          stroke: "#000000",
+          strokeThickness: 5,
+        })
+        .setOrigin(0.5, 0.5)
+        .setInteractive({ useHandCursor: true });
+
+      btn.on("pointerover", () => btn.setStyle({ color: "#ffff00" }));
+      btn.on("pointerout", () => btn.setStyle({ color: "#ffffff" }));
+      btn.on("pointerdown", () => this.selectRegion(region));
+    });
 
     EventBus.emit("current-scene-ready", this);
   }
 
-  changeScene() {
+  selectRegion(region: RegionInfo) {
+    setSelectedRegion(region);
     this.scene.start("Game");
   }
 
