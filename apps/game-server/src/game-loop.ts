@@ -20,6 +20,7 @@ export class GameLoop {
   private rooms = new Map<string, Room>();
   private roomRegions = new Map<string, RegionId>();
   private interval: ReturnType<typeof setInterval> | null = null;
+  private cleanupInterval: ReturnType<typeof setInterval> | null = null;
 
   createRoom(region: RegionId): Room {
     const id = `${region.toLowerCase()}-${nanoid(8)}`;
@@ -33,17 +34,20 @@ export class GameLoop {
     return this.rooms.get(id);
   }
 
-  /** Find a room in the given region with space, or create a new one. */
-  findOrCreateRoom(region: RegionId): Room {
+  /** Find a room in the given region with space, reserve a slot, or create a new one. */
+  findOrCreateRoom(region: RegionId, playerId: string): Room {
     for (const [id, room] of this.rooms) {
       if (
         this.roomRegions.get(id) === region &&
-        room.playerCount < MAX_PLAYERS_PER_ROOM
+        room.availableSlots > 0
       ) {
+        room.reserveSlot(playerId);
         return room;
       }
     }
-    return this.createRoom(region);
+    const room = this.createRoom(region);
+    room.reserveSlot(playerId);
+    return room;
   }
 
   listRooms(region?: RegionId): RoomInfo[] {
@@ -80,7 +84,7 @@ export class GameLoop {
     }, SERVER_TICK_MS);
 
     // Periodically clean up empty rooms
-    setInterval(() => this.removeEmptyRooms(), 30_000);
+    this.cleanupInterval = setInterval(() => this.removeEmptyRooms(), 30_000);
 
     console.log(`Game loop started at ${Math.round(1000 / SERVER_TICK_MS)}Hz`);
   }
@@ -89,6 +93,10 @@ export class GameLoop {
     if (this.interval) {
       clearInterval(this.interval);
       this.interval = null;
+    }
+    if (this.cleanupInterval) {
+      clearInterval(this.cleanupInterval);
+      this.cleanupInterval = null;
     }
   }
 }

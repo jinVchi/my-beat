@@ -33,7 +33,7 @@ export default async function joinHandler(
   const gsRes = await fetch(gsUrl, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ region }),
+    body: JSON.stringify({ region, userId: session.user.id }),
   });
 
   if (!gsRes.ok) {

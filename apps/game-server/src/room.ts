@@ -3,6 +3,7 @@ import { simulateTick } from "@my-beat/game-logic";
 import type { RoomState, SimPlayerState, SimEnemyState } from "@my-beat/game-logic/types";
 import { encodeMessage } from "@my-beat/netcode/serializer";
 import {
+  MAX_PLAYERS_PER_ROOM,
   PLAYER_MAX_HEALTH,
   ENEMY_DEFAULT_MAX_HEALTH,
 } from "@my-beat/shared-types/game-config";
@@ -27,6 +28,7 @@ export class Room {
   private connections = new Map<string, PlayerConnection>();
   private inputQueue = new Map<string, ClientPlayerInput[]>();
   private lastProcessedSeq = new Map<string, number>();
+  private reservedSlots = new Map<string, number>(); // playerId → timestamp
   private enemySpawns: Array<{ x: number; y: number }>;
 
   constructor(id: string, enemies: Array<{ x: number; y: number }>) {
@@ -55,7 +57,48 @@ export class Room {
     this.state.enemies = this.createEnemies();
   }
 
-  addPlayer(playerId: string, ws: PlayerConnection["ws"]): void {
+  get isFull(): boolean {
+    return this.connections.size >= MAX_PLAYERS_PER_ROOM;
+  }
+
+  /** Reserve a slot for a player during matchmaking. Expires after 10s. */
+  reserveSlot(playerId: string): boolean {
+    this.expireReservations();
+    if (this.reservedSlots.has(playerId)) return true;
+    if (this.connections.size + this.reservedSlots.size >= MAX_PLAYERS_PER_ROOM) return false;
+    this.reservedSlots.set(playerId, Date.now());
+    return true;
+  }
+
+  releaseSlot(playerId: string): void {
+    this.reservedSlots.delete(playerId);
+  }
+
+  private expireReservations(): void {
+    const now = Date.now();
+    for (const [id, ts] of this.reservedSlots) {
+      if (now - ts > 10_000) {
+        this.reservedSlots.delete(id);
+      }
+    }
+  }
+
+  get availableSlots(): number {
+    this.expireReservations();
+    return MAX_PLAYERS_PER_ROOM - this.connections.size - this.reservedSlots.size;
+  }
+
+  addPlayer(playerId: string, ws: PlayerConnection["ws"]): boolean {
+    // Kick existing connection for same player (duplicate join)
+    const existing = this.connections.get(playerId);
+    if (existing) {
+      existing.ws.close(4001, "Duplicate connection");
+    }
+
+    // Consume reservation or check capacity
+    this.reservedSlots.delete(playerId);
+    if (this.connections.size >= MAX_PLAYERS_PER_ROOM) return false;
+
     // Reset room when first player joins an empty room
     if (this.connections.size === 0) {
       this.resetRoom();
@@ -92,6 +135,7 @@ export class Room {
       player: playerState,
     };
     this.broadcast(joinedMsg, playerId);
+    return true;
   }
 
   removePlayer(playerId: string): void {

@@ -47,13 +47,18 @@ function handleHttp(req: IncomingMessage, res: ServerResponse): void {
     req.on("data", (chunk) => (body += chunk));
     req.on("end", () => {
       try {
-        const { region } = JSON.parse(body) as { region: string };
+        const { region, userId } = JSON.parse(body) as { region: string; userId: string };
         if (!VALID_REGIONS.has(region as RegionId)) {
           res.writeHead(400, { "Content-Type": "application/json" });
           res.end(JSON.stringify({ error: "Invalid region" }));
           return;
         }
-        const room = gameLoop.findOrCreateRoom(region as RegionId);
+        if (!userId) {
+          res.writeHead(400, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: "Missing userId" }));
+          return;
+        }
+        const room = gameLoop.findOrCreateRoom(region as RegionId, userId);
         res.writeHead(200, { "Content-Type": "application/json" });
         res.end(JSON.stringify({ roomId: room.id }));
       } catch {
@@ -108,10 +113,23 @@ server.on("upgrade", async (req, socket, head) => {
 wss.on("connection", (ws: WebSocket, user: VerifiedUser, roomId: string) => {
   const playerId = user.id;
 
-  playerData.set(ws, { playerId, roomId });
+  // Evict any existing connection for the same player
+  for (const [existingWs, pd] of playerData) {
+    if (pd.playerId === playerId) {
+      playerData.delete(existingWs);
+      // The room will close the old WS inside addPlayer
+      break;
+    }
+  }
 
   const room = gameLoop.getRoom(roomId)!;
-  room.addPlayer(playerId, ws);
+  const added = room.addPlayer(playerId, ws);
+  if (!added) {
+    ws.close(4002, "Room is full");
+    return;
+  }
+
+  playerData.set(ws, { playerId, roomId });
   console.log(
     `Player ${user.name} (${playerId}) joined room ${roomId} (${room.playerCount} players)`,
   );
@@ -149,6 +167,7 @@ wss.on("connection", (ws: WebSocket, user: VerifiedUser, roomId: string) => {
       const r = gameLoop.getRoom(pd.roomId);
       if (r) {
         r.removePlayer(pd.playerId);
+        r.releaseSlot(pd.playerId);
         console.log(
           `Player ${pd.playerId} left room ${pd.roomId} (${r.playerCount} players)`,
         );
