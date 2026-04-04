@@ -56,14 +56,16 @@ export default function LoginPage() {
       <Head>
         <title>{isSignUp ? "Sign Up" : "Sign In"} — Beat&apos;em Up</title>
       </Head>
-      <div style={styles.container}>
-        <div style={styles.card}>
-          <h1 style={styles.title}>Beat&apos;em Up</h1>
-          <p style={styles.subtitle}>
+      <div className="min-h-screen flex items-center justify-center bg-bg">
+        <div className="bg-card rounded-xl p-10 w-full max-w-[400px] shadow-[0_8px_32px_rgba(0,0,0,0.4)]">
+          <h1 className="text-accent text-3xl text-center mb-2 font-bold">
+            Beat&apos;em Up
+          </h1>
+          <p className="text-muted text-center mb-6">
             {isSignUp ? "Create your account" : "Sign in to play"}
           </p>
 
-          <form onSubmit={handleSubmit} style={styles.form}>
+          <form onSubmit={handleSubmit} className="flex flex-col gap-3">
             {isSignUp && (
               <input
                 type="text"
@@ -71,7 +73,7 @@ export default function LoginPage() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
-                style={styles.input}
+                className="px-4 py-3 rounded-lg border border-border bg-input text-white text-base outline-none focus:border-accent transition-colors"
               />
             )}
             <input
@@ -80,7 +82,7 @@ export default function LoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              style={styles.input}
+              className="px-4 py-3 rounded-lg border border-border bg-input text-white text-base outline-none focus:border-accent transition-colors"
             />
             <input
               type="password"
@@ -89,12 +91,18 @@ export default function LoginPage() {
               onChange={(e) => setPassword(e.target.value)}
               required
               minLength={8}
-              style={styles.input}
+              className="px-4 py-3 rounded-lg border border-border bg-input text-white text-base outline-none focus:border-accent transition-colors"
             />
 
-            {error && <p style={styles.error}>{error}</p>}
+            {error && (
+              <p className="text-red-400 text-sm text-center m-0">{error}</p>
+            )}
 
-            <button type="submit" disabled={loading} style={styles.button}>
+            <button
+              type="submit"
+              disabled={loading}
+              className="py-3 rounded-lg border-none bg-accent text-white text-base font-bold cursor-pointer mt-2 hover:brightness-110 active:brightness-90 disabled:opacity-50 disabled:cursor-not-allowed transition"
+            >
               {loading
                 ? "Loading..."
                 : isSignUp
@@ -108,7 +116,7 @@ export default function LoginPage() {
               setIsSignUp(!isSignUp);
               setError("");
             }}
-            style={styles.toggle}
+            className="bg-transparent border-none text-accent cursor-pointer mt-4 text-sm w-full text-center hover:underline"
           >
             {isSignUp
               ? "Already have an account? Sign In"
@@ -119,74 +127,3 @@ export default function LoginPage() {
     </>
   );
 }
-
-const styles: Record<string, React.CSSProperties> = {
-  container: {
-    minHeight: "100vh",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    background: "#0a0a0a",
-  },
-  card: {
-    background: "#1a1a2e",
-    borderRadius: "12px",
-    padding: "40px",
-    width: "100%",
-    maxWidth: "400px",
-    boxShadow: "0 8px 32px rgba(0, 0, 0, 0.4)",
-  },
-  title: {
-    color: "#e94560",
-    fontSize: "2rem",
-    textAlign: "center",
-    margin: "0 0 8px 0",
-    fontWeight: "bold",
-  },
-  subtitle: {
-    color: "#a0a0b0",
-    textAlign: "center",
-    margin: "0 0 24px 0",
-  },
-  form: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "12px",
-  },
-  input: {
-    padding: "12px 16px",
-    borderRadius: "8px",
-    border: "1px solid #333",
-    background: "#16213e",
-    color: "#fff",
-    fontSize: "1rem",
-    outline: "none",
-  },
-  button: {
-    padding: "12px",
-    borderRadius: "8px",
-    border: "none",
-    background: "#e94560",
-    color: "#fff",
-    fontSize: "1rem",
-    fontWeight: "bold",
-    cursor: "pointer",
-    marginTop: "8px",
-  },
-  error: {
-    color: "#ff6b6b",
-    fontSize: "0.875rem",
-    margin: 0,
-    textAlign: "center",
-  },
-  toggle: {
-    background: "none",
-    border: "none",
-    color: "#e94560",
-    cursor: "pointer",
-    marginTop: "16px",
-    fontSize: "0.875rem",
-    width: "100%",
-    textAlign: "center",
-  },
-};

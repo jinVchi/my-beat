@@ -43,7 +43,7 @@ export default function Home() {
 
   if (isPending) {
     return (
-      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#0a0a0a", color: "#fff" }}>
+      <div className="min-h-screen flex items-center justify-center bg-bg text-white">
         Loading...
       </div>
     );
@@ -61,13 +61,13 @@ export default function Home() {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.png" />
       </Head>
-      <div style={{ position: "fixed", top: 8, right: 12, zIndex: 1000, display: "flex", alignItems: "center", gap: 12 }}>
-        <span style={{ color: "#a0a0b0", fontSize: "0.875rem" }}>
+      <div className="fixed top-2 right-3 z-1000 flex items-center gap-3">
+        <span className="text-muted text-sm">
           {session.user.name}
         </span>
         <button
           onClick={() => signOut().then(() => router.replace("/login"))}
-          style={{ background: "none", border: "1px solid #333", color: "#e94560", padding: "4px 12px", borderRadius: 6, cursor: "pointer", fontSize: "0.75rem" }}
+          className="bg-transparent border border-border text-accent px-3 py-1 rounded-md cursor-pointer text-xs hover:bg-accent hover:text-white transition-colors"
         >
           Sign Out
         </button>
