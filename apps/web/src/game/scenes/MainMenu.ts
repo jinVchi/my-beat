@@ -5,8 +5,6 @@
 import Phaser from "phaser";
 /* START-USER-IMPORTS */
 import { EventBus } from "../EventBus";
-import { REGIONS, type RegionInfo } from "@my-beat/shared-types/game-config";
-import { setSelectedRegion } from "../state/region-store";
 /* END-USER-IMPORTS */
 
 export default class MainMenu extends Phaser.Scene {
@@ -39,43 +37,23 @@ export default class MainMenu extends Phaser.Scene {
       })
       .setOrigin(0.5, 0.5);
 
-    this.add
-      .text(512, 340, "Select Region", {
+    const startBtn = this.add
+      .text(512, 420, "Start Game", {
         align: "center",
-        color: "#a0a0b0",
+        color: "#ffffff",
         fontFamily: "Arial Black",
-        fontSize: "22px",
+        fontSize: "32px",
+        stroke: "#000000",
+        strokeThickness: 6,
       })
-      .setOrigin(0.5, 0.5);
+      .setOrigin(0.5, 0.5)
+      .setInteractive({ useHandCursor: true });
 
-    const spacing = 140;
-    const startX = 512 - spacing;
-
-    REGIONS.forEach((region, i) => {
-      const x = startX + i * spacing;
-      const btn = this.add
-        .text(x, 420, `${region.id}\n${region.label}`, {
-          align: "center",
-          color: "#ffffff",
-          fontFamily: "Arial Black",
-          fontSize: "24px",
-          stroke: "#000000",
-          strokeThickness: 5,
-        })
-        .setOrigin(0.5, 0.5)
-        .setInteractive({ useHandCursor: true });
-
-      btn.on("pointerover", () => btn.setStyle({ color: "#ffff00" }));
-      btn.on("pointerout", () => btn.setStyle({ color: "#ffffff" }));
-      btn.on("pointerdown", () => this.selectRegion(region));
-    });
+    startBtn.on("pointerover", () => startBtn.setStyle({ color: "#ffff00" }));
+    startBtn.on("pointerout", () => startBtn.setStyle({ color: "#ffffff" }));
+    startBtn.on("pointerdown", () => this.scene.start("Game"));
 
     EventBus.emit("current-scene-ready", this);
-  }
-
-  selectRegion(region: RegionInfo) {
-    setSelectedRegion(region);
-    this.scene.start("Game");
   }
 
   /* END-USER-CODE */

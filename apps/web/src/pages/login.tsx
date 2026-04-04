@@ -44,7 +44,7 @@ export default function LoginPage() {
       // otherwise useSession() on the index page may not see it yet and
       // redirect back to /login.
       await new Promise((r) => setTimeout(r, 200));
-      window.location.href = "/";
+      window.location.href = "/select-region";
     } catch {
       setError("Something went wrong. Please try again.");
       setLoading(false);

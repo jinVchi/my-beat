@@ -4,7 +4,9 @@ import styles from "@/styles/Home.module.css";
 import dynamic from "next/dynamic";
 import { useSession, signOut } from "@/lib/auth-client";
 import { useRouter } from "next/router";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { REGIONS } from "@my-beat/shared-types/game-config";
+import { setSelectedRegion } from "@/game/state/region-store";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -13,12 +15,31 @@ const AppWithoutSSR = dynamic(() => import("@/App"), { ssr: false });
 export default function Home() {
   const { data: session, isPending } = useSession();
   const router = useRouter();
+  const [regionReady, setRegionReady] = useState(false);
 
   useEffect(() => {
     if (!isPending && !session) {
       router.replace("/login");
+      return;
     }
-  }, [isPending, session, router]);
+
+    const regionId = router.query.region as string | undefined;
+    if (!regionId) {
+      if (!isPending && session) {
+        router.replace("/select-region");
+      }
+      return;
+    }
+
+    const region = REGIONS.find((r) => r.id === regionId);
+    if (!region) {
+      router.replace("/select-region");
+      return;
+    }
+
+    setSelectedRegion(region);
+    setRegionReady(true);
+  }, [isPending, session, router, router.query.region]);
 
   if (isPending) {
     return (
@@ -28,7 +49,7 @@ export default function Home() {
     );
   }
 
-  if (!session) {
+  if (!session || !regionReady) {
     return null;
   }
 
