@@ -1,10 +1,9 @@
 import { useState } from "react";
-import { useRouter } from "next/router";
+
 import Head from "next/head";
 import { signIn, signUp } from "@/lib/auth-client";
 
 export default function LoginPage() {
-  const router = useRouter();
   const [isSignUp, setIsSignUp] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -40,7 +39,9 @@ export default function LoginPage() {
           return;
         }
       }
-      await router.push("/select-region");
+      // Full page navigation so useSession() on the destination starts
+      // with a fresh server fetch instead of stale client-side cache.
+      window.location.href = "/select-region";
     } catch {
       setError("Something went wrong. Please try again.");
       setLoading(false);
