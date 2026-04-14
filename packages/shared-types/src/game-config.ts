@@ -18,6 +18,18 @@ export const ENEMY_BODY_WIDTH = 40;
 export const ENEMY_BODY_HEIGHT = 64;
 export const ENEMY_DEFAULT_MAX_HEALTH = 100;
 
+// Enemy attack AI
+export const ENEMY_DETECT_RANGE_X = 90;
+export const ENEMY_DETECT_RANGE_Y = 50;
+export const ENEMY_ATTACK_RANGE_X = 60;
+export const ENEMY_ATTACK_RANGE_Y = 40;
+export const ENEMY_ATTACK_HITBOX_WIDTH = 70;
+export const ENEMY_ATTACK_DAMAGE = 10;
+export const ENEMY_WARNING_DURATION = 900; // ms — 3 yellow flashes
+export const ENEMY_WARNING_FLASHES = 3;
+export const ENEMY_ATTACK_DURATION = 200;
+export const ENEMY_ATTACK_COOLDOWN = 1800;
+
 // World bounds
 export const WORLD_WIDTH = 1024;
 export const WORLD_HEIGHT = 768;

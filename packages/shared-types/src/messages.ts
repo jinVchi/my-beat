@@ -49,6 +49,9 @@ export type EnemyState = {
   health: number;
   maxHealth: number;
   isDead: boolean;
+  isWarning: boolean;
+  isAttacking: boolean;
+  warningTimer: number;
 };
 
 export type GameSnapshot = {

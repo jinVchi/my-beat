@@ -17,6 +17,11 @@ export type SimEnemyState = {
   health: number;
   maxHealth: number;
   isDead: boolean;
+  isWarning: boolean;
+  isAttacking: boolean;
+  warningTimer: number;
+  attackTimer: number;
+  attackCooldownTimer: number;
 };
 
 export type RoomState = {

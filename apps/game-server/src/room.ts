@@ -49,6 +49,11 @@ export class Room {
       health: ENEMY_DEFAULT_MAX_HEALTH,
       maxHealth: ENEMY_DEFAULT_MAX_HEALTH,
       isDead: false,
+      isWarning: false,
+      isAttacking: false,
+      warningTimer: 0,
+      attackTimer: 0,
+      attackCooldownTimer: 0,
     }));
   }
 
@@ -218,7 +223,17 @@ export class Room {
     return {
       tick: this.state.tick,
       players,
-      enemies: this.state.enemies,
+      enemies: this.state.enemies.map((e) => ({
+        id: e.id,
+        x: e.x,
+        y: e.y,
+        health: e.health,
+        maxHealth: e.maxHealth,
+        isDead: e.isDead,
+        isWarning: e.isWarning,
+        isAttacking: e.isAttacking,
+        warningTimer: e.warningTimer,
+      })),
     };
   }
 

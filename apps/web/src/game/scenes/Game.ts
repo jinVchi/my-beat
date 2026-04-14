@@ -110,6 +110,7 @@ export default class Game extends Phaser.Scene {
         localState.y,
         localState.facingRight,
         localState.isAttacking,
+        localState.health,
       );
     }
 
@@ -144,7 +145,15 @@ export default class Game extends Phaser.Scene {
       }
 
       if (enemy && enemy.active) {
-        enemy.updateFromServer(es.health, es.isDead);
+        enemy.updateFromServer(
+          es.health,
+          es.isDead,
+          es.x,
+          es.y,
+          es.isWarning,
+          es.isAttacking,
+          es.warningTimer,
+        );
       }
     }
   }
