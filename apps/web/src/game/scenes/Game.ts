@@ -2,6 +2,7 @@ import Phaser from "phaser";
 import { EventBus } from "../EventBus";
 import Player from "../entities/Player";
 import Enemy from "../entities/Enemy";
+import DroppedItem from "../entities/DroppedItem";
 import { RemotePlayer } from "../entities/RemotePlayer";
 import { GameClient } from "../network/ws-client";
 import { InputFlag, type GameSnapshot, type PlayerState } from "@my-beat/shared-types/messages";
@@ -13,6 +14,7 @@ export default class Game extends Phaser.Scene {
   private player!: Player;
   private enemies: Enemy[] = [];
   private remotePlayers = new Map<string, RemotePlayer>();
+  private droppedItems = new Map<string, DroppedItem>();
   private depthSortGroup: Phaser.GameObjects.Container[] = [];
   private gameClient!: GameClient;
   private localPlayerId: string | null = null;
@@ -30,10 +32,10 @@ export default class Game extends Phaser.Scene {
   }
 
   create() {
-    // Reset state for scene restart
     this.player = undefined!;
     this.enemies = [];
     this.remotePlayers = new Map();
+    this.droppedItems = new Map();
     this.depthSortGroup = [];
     this.localPlayerId = null;
 
@@ -79,13 +81,13 @@ export default class Game extends Phaser.Scene {
   }
 
   update(_time: number, _delta: number) {
-    // Read local input and send to server
     let inputFlags = 0;
     if (this.keys.W.isDown) inputFlags |= InputFlag.UP;
     if (this.keys.S.isDown) inputFlags |= InputFlag.DOWN;
     if (this.keys.A.isDown) inputFlags |= InputFlag.LEFT;
     if (this.keys.D.isDown) inputFlags |= InputFlag.RIGHT;
-    if (Phaser.Input.Keyboard.JustDown(this.keys.J)) inputFlags |= InputFlag.ATTACK;
+    if (Phaser.Input.Keyboard.JustDown(this.keys.J))
+      inputFlags |= InputFlag.ATTACK | InputFlag.PICKUP;
 
     this.gameClient.sendInput(inputFlags);
     this.depthSort();
@@ -154,6 +156,30 @@ export default class Game extends Phaser.Scene {
           es.isAttacking,
           es.warningTimer,
         );
+      }
+    }
+
+    // Update dropped items
+    const items = snapshot.items ?? [];
+    const activeItemIds = new Set<string>();
+    for (const itemState of items) {
+      activeItemIds.add(itemState.id);
+      if (!this.droppedItems.has(itemState.id)) {
+        const item = new DroppedItem(
+          this,
+          itemState.x,
+          itemState.y,
+          itemState.itemId,
+          itemState.id,
+        );
+        this.droppedItems.set(itemState.id, item);
+        this.depthSortGroup.push(item);
+      }
+    }
+    for (const [id, item] of this.droppedItems) {
+      if (!activeItemIds.has(id)) {
+        item.destroy();
+        this.droppedItems.delete(id);
       }
     }
   }

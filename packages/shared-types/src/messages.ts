@@ -5,6 +5,7 @@ export const InputFlag = {
   LEFT: 4,
   RIGHT: 8,
   ATTACK: 16,
+  PICKUP: 32,
 } as const;
 
 // --- Client → Server messages ---
@@ -54,10 +55,18 @@ export type EnemyState = {
   warningTimer: number;
 };
 
+export type ItemState = {
+  id: string;
+  itemId: string;
+  x: number;
+  y: number;
+};
+
 export type GameSnapshot = {
   tick: number;
   players: PlayerState[];
   enemies: EnemyState[];
+  items: ItemState[];
 };
 
 // --- Server → Client messages ---

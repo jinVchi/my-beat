@@ -46,6 +46,11 @@ export const GAME_SERVER_PORT = 3002;
 // Matchmaking
 export const MAX_PLAYERS_PER_ROOM = 4;
 
+// Items
+export type ItemId = "item_a" | "item_b" | "item_c";
+export const ITEM_IDS: ItemId[] = ["item_a", "item_b", "item_c"];
+export const ITEM_PICKUP_RANGE = 50;
+
 // Regions
 export type RegionId = "JP" | "US" | "EU";
 

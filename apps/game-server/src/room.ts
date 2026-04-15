@@ -1,13 +1,16 @@
 import type { WebSocket } from "ws";
 import { simulateTick } from "@my-beat/game-logic";
-import type { RoomState, SimPlayerState, SimEnemyState } from "@my-beat/game-logic/types";
+import type { RoomState, SimPlayerState, SimEnemyState, SimItemState } from "@my-beat/game-logic/types";
 import { encodeMessage } from "@my-beat/netcode/serializer";
 import {
   MAX_PLAYERS_PER_ROOM,
   PLAYER_MAX_HEALTH,
   ENEMY_DEFAULT_MAX_HEALTH,
+  ITEM_IDS,
 } from "@my-beat/shared-types/game-config";
+import type { ItemId } from "@my-beat/shared-types/game-config";
 import {
+  InputFlag,
   ServerMsgType,
   type ClientPlayerInput,
   type GameSnapshot,
@@ -22,14 +25,26 @@ export type PlayerConnection = {
   ws: WebSocket;
 };
 
+export type PendingItemWrite = {
+  playerId: string;
+  itemId: string;
+  roomId: string;
+  pickedUpAt: number;
+};
+
+const FLUSH_URL =
+  process.env.GLOBAL_API_URL ?? "http://localhost:3001";
+
 export class Room {
   id: string;
   state: RoomState;
   private connections = new Map<string, PlayerConnection>();
   private inputQueue = new Map<string, ClientPlayerInput[]>();
   private lastProcessedSeq = new Map<string, number>();
-  private reservedSlots = new Map<string, number>(); // playerId → timestamp
+  private reservedSlots = new Map<string, number>();
   private enemySpawns: Array<{ x: number; y: number }>;
+  private itemCounter = 0;
+  pendingWrites: PendingItemWrite[] = [];
 
   constructor(id: string, enemies: Array<{ x: number; y: number }>) {
     this.id = id;
@@ -38,6 +53,7 @@ export class Room {
       tick: 0,
       players: new Map(),
       enemies: this.createEnemies(),
+      items: [],
     };
   }
 
@@ -60,13 +76,14 @@ export class Room {
   private resetRoom(): void {
     this.state.tick = 0;
     this.state.enemies = this.createEnemies();
+    this.state.items = [];
+    this.itemCounter = 0;
   }
 
   get isFull(): boolean {
     return this.connections.size >= MAX_PLAYERS_PER_ROOM;
   }
 
-  /** Reserve a slot for a player during matchmaking. Expires after 10s. */
   reserveSlot(playerId: string): boolean {
     this.expireReservations();
     if (this.reservedSlots.has(playerId)) return true;
@@ -94,17 +111,14 @@ export class Room {
   }
 
   addPlayer(playerId: string, ws: PlayerConnection["ws"]): boolean {
-    // Kick existing connection for same player (duplicate join)
     const existing = this.connections.get(playerId);
     if (existing) {
       existing.ws.close(4001, "Duplicate connection");
     }
 
-    // Consume reservation or check capacity
     this.reservedSlots.delete(playerId);
     if (this.connections.size >= MAX_PLAYERS_PER_ROOM) return false;
 
-    // Reset room when first player joins an empty room
     if (this.connections.size === 0) {
       this.resetRoom();
     }
@@ -125,7 +139,6 @@ export class Room {
     this.inputQueue.set(playerId, []);
     this.lastProcessedSeq.set(playerId, 0);
 
-    // Send ROOM_JOINED to the new player
     const joinMsg: ServerRoomJoined = {
       type: ServerMsgType.ROOM_JOINED,
       playerId,
@@ -133,7 +146,6 @@ export class Room {
     };
     this.send(ws, joinMsg);
 
-    // Broadcast PLAYER_JOINED to others
     const playerState = this.toPlayerState(player);
     const joinedMsg: ServerPlayerJoined = {
       type: ServerMsgType.PLAYER_JOINED,
@@ -154,6 +166,10 @@ export class Room {
       playerId,
     };
     this.broadcast(leftMsg);
+
+    if (this.connections.size === 0) {
+      this.flushPendingWrites();
+    }
   }
 
   queueInput(playerId: string, input: ClientPlayerInput): void {
@@ -168,32 +184,80 @@ export class Room {
     for (const [playerId, queue] of this.inputQueue) {
       const player = this.state.players.get(playerId);
       if (!player || queue.length === 0) {
-        // No inputs: clear movement flags but keep timers
         if (player) {
           this.state.players.set(playerId, { ...player, inputFlags: 0 });
         }
         continue;
       }
 
-      // For directional flags, use the last input's flags
-      // For ATTACK, OR across all inputs so quick presses aren't lost
       let mergedFlags = queue[queue.length - 1].inputFlags;
       let maxSeq = 0;
       for (const input of queue) {
-        mergedFlags |= input.inputFlags & 16; // OR the ATTACK bit
+        mergedFlags |= input.inputFlags & (InputFlag.ATTACK | InputFlag.PICKUP);
         if (input.seq > maxSeq) maxSeq = input.seq;
       }
 
       this.state.players.set(playerId, { ...player, inputFlags: mergedFlags });
       this.lastProcessedSeq.set(playerId, maxSeq);
-      queue.length = 0; // Clear the queue
+      queue.length = 0;
     }
 
-    // Run simulation
-    this.state = simulateTick(this.state);
+    // Snapshot enemy alive states before simulation
+    const wasAlive = this.state.enemies.map((e) => !e.isDead);
 
-    // Broadcast snapshot
+    // Run simulation (handles combat + pickups)
+    const { state, pickups } = simulateTick(this.state);
+    this.state = state;
+
+    // Record picked-up items for DB flush
+    for (const pickup of pickups) {
+      this.pendingWrites.push({
+        playerId: pickup.playerId,
+        itemId: pickup.itemType,
+        roomId: this.id,
+        pickedUpAt: Date.now(),
+      });
+    }
+
+    // Spawn items for newly dead enemies
+    for (let i = 0; i < this.state.enemies.length; i++) {
+      if (wasAlive[i] && this.state.enemies[i].isDead) {
+        this.spawnRandomItem(
+          this.state.enemies[i].x,
+          this.state.enemies[i].y,
+        );
+      }
+    }
+
     this.broadcastSnapshot();
+  }
+
+  private spawnRandomItem(x: number, y: number): void {
+    const itemId = ITEM_IDS[Math.floor(Math.random() * ITEM_IDS.length)];
+    const item: SimItemState = {
+      id: `item-${this.itemCounter++}`,
+      itemId,
+      x,
+      y,
+    };
+    this.state.items.push(item);
+  }
+
+  async flushPendingWrites(): Promise<void> {
+    if (this.pendingWrites.length === 0) return;
+    const writes = this.pendingWrites.splice(0);
+    try {
+      const res = await fetch(`${FLUSH_URL}/api/items/batch`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ items: writes }),
+      });
+      if (!res.ok) throw new Error(`Status ${res.status}`);
+      console.log(`Flushed ${writes.length} item writes for room ${this.id}`);
+    } catch (e) {
+      console.error(`Failed to flush item writes for room ${this.id}:`, e);
+      this.pendingWrites.unshift(...writes);
+    }
   }
 
   get playerCount(): number {
@@ -233,6 +297,12 @@ export class Room {
         isWarning: e.isWarning,
         isAttacking: e.isAttacking,
         warningTimer: e.warningTimer,
+      })),
+      items: this.state.items.map((item) => ({
+        id: item.id,
+        itemId: item.itemId,
+        x: item.x,
+        y: item.y,
       })),
     };
   }

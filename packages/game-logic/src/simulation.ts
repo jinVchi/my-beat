@@ -1,10 +1,11 @@
 import { SERVER_TICK_MS } from "@my-beat/shared-types/game-config";
-import { RoomState } from "./types";
+import type { RoomState, TickResult } from "./types";
 import { applyMovement } from "./movement";
 import { tryStartAttack, tickAttackTimers, resolveAttackHits } from "./combat";
 import { updateEnemies } from "./enemy-ai";
+import { processPickups } from "./items";
 
-export function simulateTick(state: RoomState): RoomState {
+export function simulateTick(state: RoomState): TickResult {
   const deltaMs = SERVER_TICK_MS;
   let enemies = state.enemies;
   let players = new Map(state.players);
@@ -28,9 +29,16 @@ export function simulateTick(state: RoomState): RoomState {
   enemies = result.enemies;
   players = result.players;
 
+  // Item pickups
+  const pickupResult = processPickups(players, state.items);
+
   return {
-    tick: state.tick + 1,
-    players,
-    enemies,
+    state: {
+      tick: state.tick + 1,
+      players,
+      enemies,
+      items: pickupResult.items,
+    },
+    pickups: pickupResult.pickups,
   };
 }

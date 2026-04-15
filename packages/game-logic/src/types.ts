@@ -1,3 +1,5 @@
+import type { ItemId } from "@my-beat/shared-types/game-config";
+
 export type SimPlayerState = {
   id: string;
   x: number;
@@ -24,8 +26,27 @@ export type SimEnemyState = {
   attackCooldownTimer: number;
 };
 
+export type SimItemState = {
+  id: string;
+  itemId: ItemId;
+  x: number;
+  y: number;
+};
+
 export type RoomState = {
   tick: number;
   players: Map<string, SimPlayerState>;
   enemies: SimEnemyState[];
+  items: SimItemState[];
+};
+
+export type PickupEvent = {
+  playerId: string;
+  itemId: string;
+  itemType: ItemId;
+};
+
+export type TickResult = {
+  state: RoomState;
+  pickups: PickupEvent[];
 };
