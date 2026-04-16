@@ -1,0 +1,8 @@
+---
+description: Shared project rules and skills
+globs:
+alwaysApply: true
+---
+@AGENTS.md
+
+Read and follow all skill files in the skills/ folder.

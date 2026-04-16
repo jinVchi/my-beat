@@ -1,3 +1,5 @@
+Read and follow all files in skills/
+
 # Beat'em Up — Multiplayer Web Game
 
 ## About
