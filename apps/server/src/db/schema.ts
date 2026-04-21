@@ -1,6 +1,6 @@
 import { pgTable, serial, text, integer, timestamp } from "drizzle-orm/pg-core";
 
-export { user, session, account, verification } from "./auth-schema";
+export { user, session, account, verification } from "./auth-schema.js";
 
 export const test = pgTable("test", {
   id: serial("id").primaryKey(),

@@ -33,7 +33,7 @@ export type PendingItemWrite = {
 };
 
 const FLUSH_URL =
-  process.env.GLOBAL_API_URL ?? "http://localhost:3001";
+  process.env.GLOBAL_API_URL ?? "http://localhost:3002";
 
 export class Room {
   id: string;

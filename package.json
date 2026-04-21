@@ -13,11 +13,12 @@
     "lint": "turbo run lint",
     "test": "turbo run test",
     "dev:web": "turbo run dev --filter=@my-beat/web",
+    "dev:server": "turbo run dev --filter=@my-beat/server",
     "dev:game-server": "turbo run dev --filter=@my-beat/game-server",
-    "db:generate": "npm run db:generate --workspace=@my-beat/web",
-    "db:migrate": "npm run db:migrate --workspace=@my-beat/web",
-    "db:push": "npm run db:push --workspace=@my-beat/web",
-    "db:studio": "npm run db:studio --workspace=@my-beat/web"
+    "db:generate": "npm run db:generate --workspace=@my-beat/server",
+    "db:migrate": "npm run db:migrate --workspace=@my-beat/server",
+    "db:push": "npm run db:push --workspace=@my-beat/server",
+    "db:studio": "npm run db:studio --workspace=@my-beat/server"
   },
   "devDependencies": {
     "turbo": "^2.5.0",

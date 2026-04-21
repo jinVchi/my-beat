@@ -2,6 +2,7 @@
   "name": "@my-beat/shared-types",
   "version": "1.0.0",
   "private": true,
+  "type": "module",
   "exports": {
     "./game-config": "./src/game-config.ts",
     "./messages": "./src/messages.ts"

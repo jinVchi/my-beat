@@ -41,7 +41,7 @@ export const WORLD_RIGHT = 994;
 // Server
 export const SERVER_TICK_RATE = 60;
 export const SERVER_TICK_MS = 1000 / SERVER_TICK_RATE;
-export const GAME_SERVER_PORT = 3002;
+export const GAME_SERVER_PORT = 3003;
 
 // Matchmaking
 export const MAX_PLAYERS_PER_ROOM = 4;

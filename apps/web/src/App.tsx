@@ -1,11 +1,14 @@
-import { PhaserGame } from "./PhaserGame";
+import { Routes, Route } from "react-router-dom";
+import HomePage from "@/routes/home";
+import LoginPage from "@/routes/login";
+import SelectRegionPage from "@/routes/select-region";
 
-function App() {
+export function AppRoutes() {
   return (
-    <div id="app">
-      <PhaserGame />
-    </div>
+    <Routes>
+      <Route path="/" element={<HomePage />} />
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/select-region" element={<SelectRegionPage />} />
+    </Routes>
   );
 }
-
-export default App;

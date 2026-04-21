@@ -7,7 +7,7 @@ import { decodeClientMessage, encodeMessage } from "@my-beat/netcode/serializer"
 import { GameLoop } from "./game-loop";
 
 const AUTH_VERIFY_URL =
-  process.env.AUTH_VERIFY_URL ?? "http://localhost:3001/api/auth/verify";
+  process.env.AUTH_VERIFY_URL ?? "http://localhost:3002/api/auth/verify";
 
 type VerifiedUser = { id: string; name: string; email: string };
 

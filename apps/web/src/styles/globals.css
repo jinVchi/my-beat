@@ -1,4 +1,7 @@
 @import "tailwindcss";
+@import "@fontsource/inter/400.css";
+@import "@fontsource/inter/500.css";
+@import "@fontsource/inter/700.css";
 
 @theme {
   --color-bg: #0a0a0a;
@@ -7,6 +10,10 @@
   --color-accent: #e94560;
   --color-muted: #a0a0b0;
   --color-border: #333333;
+
+  --font-sans:
+    "Inter", system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial,
+    sans-serif;
 }
 
 body {
@@ -14,11 +21,16 @@ body {
   padding: 0;
   color: rgba(255, 255, 255, 0.87);
   background-color: var(--color-bg);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+}
+
+#app,
+#root {
+  width: 100%;
+  min-height: 100vh;
 }
 
 #app {
-  width: 100%;
   height: 100vh;
   overflow: hidden;
   display: flex;
@@ -50,10 +62,17 @@ body {
     background-color: #0ec3c9;
   }
 
-  /* Disabled styles */
   &:disabled {
     cursor: not-allowed;
     border: 1px solid rgba(255, 255, 255, 0.3);
     color: rgba(255, 255, 255, 0.3);
   }
+}
+
+.home-main {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background-color: var(--color-bg);
 }
