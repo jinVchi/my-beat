@@ -1,0 +1,15 @@
+
+> my-beat@1.0.0 dev:server
+> turbo run dev --filter=@my-beat/server
+
+
+   • Packages in scope: @my-beat/server
+   • Running dev in 1 packages
+   • Remote caching disabled
+
+@my-beat/server:dev: cache bypass, force executing 727c52ccc6e059e7
+@my-beat/server:dev: 
+@my-beat/server:dev: > @my-beat/server@1.0.0 dev
+@my-beat/server:dev: > tsx watch src/index.ts
+@my-beat/server:dev: 
+@my-beat/server:dev: Global server listening on http://localhost:3002

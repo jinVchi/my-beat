@@ -1,0 +1,24 @@
+
+> my-beat@1.0.0 dev:game-server
+> turbo run dev --filter=@my-beat/game-server
+
+
+   • Packages in scope: @my-beat/game-server
+   • Running dev in 1 packages
+   • Remote caching disabled
+
+@my-beat/game-server:dev: cache bypass, force executing 3eb7983a209a4c1d
+@my-beat/game-server:dev: 
+@my-beat/game-server:dev: > @my-beat/game-server@1.0.0 dev
+@my-beat/game-server:dev: > tsx watch src/index.ts
+@my-beat/game-server:dev: 
+@my-beat/game-server:dev: Game loop started at 60Hz
+@my-beat/game-server:dev: Game server listening on ws://localhost:3003
+@my-beat/game-server:dev: Player test (n8VnConncUw53LKT50fuH2twQb4PMrPn) joined room jp-OaEGq2jT (1 players)
+@my-beat/game-server:dev: Flushed 2 item writes for room jp-OaEGq2jT
+@my-beat/game-server:dev: Flushed 1 item writes for room jp-OaEGq2jT
+@my-beat/game-server:dev: Player n8VnConncUw53LKT50fuH2twQb4PMrPn left room jp-OaEGq2jT (0 players)
+@my-beat/game-server:dev: Player test (n8VnConncUw53LKT50fuH2twQb4PMrPn) joined room jp-Bab-ITIj (1 players)
+@my-beat/game-server:dev: Flushed 3 item writes for room jp-Bab-ITIj
+@my-beat/game-server:dev: Player n8VnConncUw53LKT50fuH2twQb4PMrPn left room jp-Bab-ITIj (0 players)
+@my-beat/game-server:dev: Player test (n8VnConncUw53LKT50fuH2twQb4PMrPn) joined room jp-hDdV-FeS (1 players)

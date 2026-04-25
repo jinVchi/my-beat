@@ -1,0 +1,29 @@
+
+> my-beat@1.0.0 dev:web
+> turbo run dev --filter=@my-beat/web
+
+
+   • Packages in scope: @my-beat/web
+   • Running dev in 1 packages
+   • Remote caching disabled
+
+@my-beat/web:dev: cache bypass, force executing 19a5fc0c4ca019c4
+@my-beat/web:dev: 
+@my-beat/web:dev: > @my-beat/web@1.0.0 dev
+@my-beat/web:dev: > vite
+@my-beat/web:dev: 
+@my-beat/web:dev: 
+@my-beat/web:dev:   [32m[1mVITE[22m v6.4.2[39m  [2mready in [0m[1m309[22m[2m[0m ms[22m
+@my-beat/web:dev: 
+@my-beat/web:dev:   [32m➜[39m  [1mLocal[22m:   [36mhttp://localhost:[1m3001[22m/[39m
+@my-beat/web:dev: [2m  [32m➜[39m  [1mNetwork[22m[2m: use [22m[1m--host[22m[2m to expose[22m
+@my-beat/web:dev: [2m11:22:48 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/auth/get-session[39m
+@my-beat/web:dev: AggregateError [ECONNREFUSED]: 
+@my-beat/web:dev:     at internalConnectMultiple (node:net:1134:18)
+@my-beat/web:dev:     at afterConnectMultiple (node:net:1715:7)
+@my-beat/web:dev: [2m11:26:06 AM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/auth/sign-in/email[39m
+@my-beat/web:dev: AggregateError [ECONNREFUSED]: 
+@my-beat/web:dev:     at internalConnectMultiple (node:net:1134:18)
+@my-beat/web:dev:     at afterConnectMultiple (node:net:1715:7)
+@my-beat/web:dev: [2m11:38:12 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/globals.css, /@fs/D:\Code\MyGame\my-beat\apps\web\src\PhaserGame.tsx[22m
+@my-beat/web:dev: [2m11:45:09 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/globals.css, /@fs/D:\Code\MyGame\my-beat\apps\web\src\PhaserGame.tsx[22m
