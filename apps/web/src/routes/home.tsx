@@ -53,7 +53,7 @@ export default function HomePage() {
 
   return (
     <>
-      <div className="fixed top-2 right-3 z-[1000] flex items-center gap-3">
+      <div className="fixed top-2 right-3 z-1000 flex items-center gap-3">
         <span className="text-muted text-sm">{session.user.name}</span>
         <button
           onClick={() =>
@@ -72,3 +72,4 @@ export default function HomePage() {
     </>
   );
 }
+
