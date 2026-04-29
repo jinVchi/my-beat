@@ -1,1 +1,3 @@
 • turbo 2.8.21
+ ERROR  @my-beat/game-server#dev: command (D:\Code\MyGame\my-beat\apps\game-server) D:\resource\nodejs\npm.cmd run dev exited (1073807364)
+ ERROR  run failed: command  exited (1073807364)

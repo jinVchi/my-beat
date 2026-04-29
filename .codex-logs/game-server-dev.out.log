@@ -22,3 +22,23 @@
 @my-beat/game-server:dev: Flushed 3 item writes for room jp-Bab-ITIj
 @my-beat/game-server:dev: Player n8VnConncUw53LKT50fuH2twQb4PMrPn left room jp-Bab-ITIj (0 players)
 @my-beat/game-server:dev: Player test (n8VnConncUw53LKT50fuH2twQb4PMrPn) joined room jp-hDdV-FeS (1 players)
+@my-beat/game-server:dev: Flushed 3 item writes for room jp-hDdV-FeS
+@my-beat/game-server:dev: Player n8VnConncUw53LKT50fuH2twQb4PMrPn left room jp-hDdV-FeS (0 players)
+@my-beat/game-server:dev: Player test (n8VnConncUw53LKT50fuH2twQb4PMrPn) joined room jp-bxMeIuqx (1 players)
+@my-beat/game-server:dev: Player n8VnConncUw53LKT50fuH2twQb4PMrPn left room jp-bxMeIuqx (0 players)
+@my-beat/game-server:dev: Player test (n8VnConncUw53LKT50fuH2twQb4PMrPn) joined room jp-bxMeIuqx (1 players)
+@my-beat/game-server:dev: Flushed 3 item writes for room jp-bxMeIuqx
+@my-beat/game-server:dev: Player n8VnConncUw53LKT50fuH2twQb4PMrPn left room jp-bxMeIuqx (0 players)
+@my-beat/game-server:dev: npm error Lifecycle script `dev` failed with error:
+@my-beat/game-server:dev: npm error code 1073807364
+@my-beat/game-server:dev: npm error path D:\Code\MyGame\my-beat\apps\game-server
+@my-beat/game-server:dev: npm error workspace @my-beat/game-server@1.0.0
+@my-beat/game-server:dev: npm error location D:\Code\MyGame\my-beat\apps\game-server
+@my-beat/game-server:dev: npm error command failed
+@my-beat/game-server:dev: npm error command C:\WINDOWS\system32\cmd.exe /d /s /c tsx watch src/index.ts
+
+ Tasks:    0 successful, 1 total
+Cached:    0 cached, 1 total
+  Time:    12h29m32.212s 
+Failed:    @my-beat/game-server#dev
+

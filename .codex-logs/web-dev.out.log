@@ -27,3 +27,7 @@
 @my-beat/web:dev:     at afterConnectMultiple (node:net:1715:7)
 @my-beat/web:dev: [2m11:38:12 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/globals.css, /@fs/D:\Code\MyGame\my-beat\apps\web\src\PhaserGame.tsx[22m
 @my-beat/web:dev: [2m11:45:09 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/globals.css, /@fs/D:\Code\MyGame\my-beat\apps\web\src\PhaserGame.tsx[22m
+@my-beat/web:dev: [2m2:45:49 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/globals.css, /@fs/D:\Code\MyGame\my-beat\apps\web\src\PhaserGame.tsx[22m
+@my-beat/web:dev: [2m2:50:45 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/globals.css, /@fs/D:\Code\MyGame\my-beat\apps\web\src\PhaserGame.tsx[22m
+@my-beat/web:dev: [2m10:13:40 PM[22m [36m[1m[vite][22m[39m [32m.env changed, restarting server...[39m
+@my-beat/web:dev: [2m10:13:40 PM[22m [36m[1m[vite][22m[39m server restarted.

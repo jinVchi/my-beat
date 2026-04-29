@@ -57,70 +57,11 @@ export default class Preloader extends Phaser.Scene {
   preload() {
     // Use the 'pack' file to load in any assets you need for this scene
     this.load.pack("preload", "assets/preload-asset-pack.json");
-    this.load.spritesheet("player-fighter", "assets/sprites/player-sheet.png", {
-      frameWidth: 96,
-      frameHeight: 96,
-      margin: 12,
-      spacing: 20,
-    });
   }
 
   create() {
-    //  When all the assets have loaded, it's often worth creating global objects here that the rest of the game can use.
-    //  For example, you can define global animations here, so we can use them in other scenes.
-    this.createPlayerAnimations();
-
     //  Move to the MainMenu. You could also swap this for a Scene Transition, such as a camera fade.
     this.scene.start("MainMenu");
-  }
-
-  private createPlayerAnimations() {
-    if (this.anims.exists("player-idle")) return;
-
-    this.anims.create({
-      key: "player-idle",
-      frames: this.anims.generateFrameNumbers("player-fighter", {
-        frames: [0, 14],
-      }),
-      frameRate: 4,
-      repeat: -1,
-    });
-
-    this.anims.create({
-      key: "player-walk",
-      frames: this.anims.generateFrameNumbers("player-fighter", {
-        frames: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
-      }),
-      frameRate: 14,
-      repeat: -1,
-    });
-
-    this.anims.create({
-      key: "player-attack",
-      frames: this.anims.generateFrameNumbers("player-fighter", {
-        frames: [12, 13],
-      }),
-      frameRate: 12,
-      repeat: 0,
-    });
-
-    this.anims.create({
-      key: "player-hit",
-      frames: this.anims.generateFrameNumbers("player-fighter", {
-        frames: [15],
-      }),
-      frameRate: 1,
-      repeat: 0,
-    });
-
-    this.anims.create({
-      key: "player-ko",
-      frames: this.anims.generateFrameNumbers("player-fighter", {
-        frames: [16],
-      }),
-      frameRate: 1,
-      repeat: 0,
-    });
   }
   /* END-USER-CODE */
 }
