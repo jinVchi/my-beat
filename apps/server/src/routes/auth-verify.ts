@@ -1,57 +1,65 @@
-import { Hono } from "hono";
+import { Controller, Get, Query, Req, Res } from "@nestjs/common";
 import { and, eq, gt } from "drizzle-orm";
-import { auth } from "../lib/auth.js";
 import { db } from "../db/index.js";
 import { session as sessionTable, user as userTable } from "../db/auth-schema.js";
+import {
+  getSessionFromRequest,
+  type RequestWithHeaders,
+  type StatusResponse,
+} from "../lib/request.js";
 
-export const authVerifyRoute = new Hono();
+@Controller("api/auth/verify")
+export class AuthVerifyController {
+  @Get()
+  async verify(
+    @Query("token") token: string | undefined,
+    @Req() req: RequestWithHeaders,
+    @Res({ passthrough: true }) res: StatusResponse,
+  ) {
+    if (token) {
+      const rows = await db
+        .select({
+          userId: sessionTable.userId,
+          userName: userTable.name,
+          userEmail: userTable.email,
+        })
+        .from(sessionTable)
+        .innerJoin(userTable, eq(sessionTable.userId, userTable.id))
+        .where(
+          and(
+            eq(sessionTable.token, token),
+            gt(sessionTable.expiresAt, new Date()),
+          ),
+        )
+        .limit(1);
 
-authVerifyRoute.get("/", async (c) => {
-  const token = c.req.query("token");
+      if (rows.length === 0) {
+        res.status(401);
+        return { error: "Unauthorized" };
+      }
 
-  if (token) {
-    const rows = await db
-      .select({
-        userId: sessionTable.userId,
-        userName: userTable.name,
-        userEmail: userTable.email,
-      })
-      .from(sessionTable)
-      .innerJoin(userTable, eq(sessionTable.userId, userTable.id))
-      .where(
-        and(
-          eq(sessionTable.token, token),
-          gt(sessionTable.expiresAt, new Date()),
-        ),
-      )
-      .limit(1);
-
-    if (rows.length === 0) {
-      return c.json({ error: "Unauthorized" }, 401);
+      return {
+        user: {
+          id: rows[0].userId,
+          name: rows[0].userName,
+          email: rows[0].userEmail,
+        },
+      };
     }
 
-    return c.json({
+    const sessionData = await getSessionFromRequest(req);
+
+    if (!sessionData) {
+      res.status(401);
+      return { error: "Unauthorized" };
+    }
+
+    return {
       user: {
-        id: rows[0].userId,
-        name: rows[0].userName,
-        email: rows[0].userEmail,
+        id: sessionData.user.id,
+        name: sessionData.user.name,
+        email: sessionData.user.email,
       },
-    });
+    };
   }
-
-  const sessionData = await auth.api.getSession({
-    headers: c.req.raw.headers,
-  });
-
-  if (!sessionData) {
-    return c.json({ error: "Unauthorized" }, 401);
-  }
-
-  return c.json({
-    user: {
-      id: sessionData.user.id,
-      name: sessionData.user.name,
-      email: sessionData.user.email,
-    },
-  });
-});
+}

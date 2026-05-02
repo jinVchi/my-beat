@@ -1,43 +1,57 @@
-import { Hono } from "hono";
-import { auth } from "../lib/auth.js";
+import { Body, Controller, Post, Req, Res } from "@nestjs/common";
 import { GAME_SERVER_PORT, REGIONS } from "@my-beat/shared-types/game-config";
 import type { RegionId } from "@my-beat/shared-types/game-config";
+import {
+  getSessionFromRequest,
+  type RequestWithHeaders,
+  type StatusResponse,
+} from "../lib/request.js";
 
 const VALID_REGIONS = new Set<RegionId>(["JP", "US", "EU"]);
 
-export const matchmakingRoute = new Hono();
+type JoinMatchmakingBody = {
+  region?: string;
+};
 
-matchmakingRoute.post("/join", async (c) => {
-  const sessionData = await auth.api.getSession({
-    headers: c.req.raw.headers,
-  });
-  if (!sessionData) {
-    return c.json({ error: "Unauthorized" }, 401);
+@Controller("api/matchmaking")
+export class MatchmakingController {
+  @Post("join")
+  async join(
+    @Body() body: JoinMatchmakingBody | null,
+    @Req() req: RequestWithHeaders,
+    @Res({ passthrough: true }) res: StatusResponse,
+  ) {
+    const sessionData = await getSessionFromRequest(req);
+    if (!sessionData) {
+      res.status(401);
+      return { error: "Unauthorized" };
+    }
+
+    const region = body?.region;
+    if (!region || !VALID_REGIONS.has(region as RegionId)) {
+      res.status(400);
+      return { error: "Invalid region" };
+    }
+
+    const regionInfo = REGIONS.find((r) => r.id === region)!;
+
+    const gsUrl = `http://localhost:${GAME_SERVER_PORT}/matchmaking/join`;
+    const gsRes = await fetch(gsUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ region, userId: sessionData.user.id }),
+    });
+
+    if (!gsRes.ok) {
+      res.status(502);
+      return { error: "Game server unavailable" };
+    }
+
+    const { roomId } = (await gsRes.json()) as { roomId: string };
+
+    return {
+      wsUrl: regionInfo.wsUrl,
+      roomId,
+    };
   }
-
-  const body = (await c.req.json().catch(() => null)) as { region?: string } | null;
-  const region = body?.region;
-  if (!region || !VALID_REGIONS.has(region as RegionId)) {
-    return c.json({ error: "Invalid region" }, 400);
-  }
-
-  const regionInfo = REGIONS.find((r) => r.id === region)!;
-
-  const gsUrl = `http://localhost:${GAME_SERVER_PORT}/matchmaking/join`;
-  const gsRes = await fetch(gsUrl, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ region, userId: sessionData.user.id }),
-  });
-
-  if (!gsRes.ok) {
-    return c.json({ error: "Game server unavailable" }, 502);
-  }
-
-  const { roomId } = (await gsRes.json()) as { roomId: string };
-
-  return c.json({
-    wsUrl: regionInfo.wsUrl,
-    roomId,
-  });
-});
+}

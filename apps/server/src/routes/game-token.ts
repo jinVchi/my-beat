@@ -1,16 +1,24 @@
-import { Hono } from "hono";
-import { auth } from "../lib/auth.js";
+import { Controller, Get, Req, Res } from "@nestjs/common";
+import {
+  getSessionFromRequest,
+  type RequestWithHeaders,
+  type StatusResponse,
+} from "../lib/request.js";
 
-export const gameTokenRoute = new Hono();
+@Controller("api/game-token")
+export class GameTokenController {
+  @Get()
+  async getToken(
+    @Req() req: RequestWithHeaders,
+    @Res({ passthrough: true }) res: StatusResponse,
+  ) {
+    const sessionData = await getSessionFromRequest(req);
 
-gameTokenRoute.get("/", async (c) => {
-  const sessionData = await auth.api.getSession({
-    headers: c.req.raw.headers,
-  });
+    if (!sessionData) {
+      res.status(401);
+      return { error: "Unauthorized" };
+    }
 
-  if (!sessionData) {
-    return c.json({ error: "Unauthorized" }, 401);
+    return { token: sessionData.session.token };
   }
-
-  return c.json({ token: sessionData.session.token });
-});
+}

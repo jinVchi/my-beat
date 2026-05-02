@@ -9,7 +9,7 @@ Server-authoritative multiplayer beat'em up web game. Players worldwide connect 
 ## Tech Stack
 
 - **Frontend:** Vite + React + Phaser 3, TypeScript
-- **Global Server:** Hono on Node.js (`@hono/node-server`)
+- **Global Server:** NestJS on Node.js
 - **Game Server:** Node.js + ws, TypeScript
 - **Auth:** Better Auth (session in PostgreSQL)
 - **ORM:** Drizzle
@@ -21,7 +21,7 @@ Server-authoritative multiplayer beat'em up web game. Players worldwide connect 
 
 ```
 apps/web          → Vite + React frontend + Phaser game client
-apps/server       → Global API + Matchmaker (Hono HTTP server)
+apps/server       → Global API + Matchmaker (NestJS HTTP server)
 apps/game-server  → Regional WebSocket game server
 packages/game-logic    → Deterministic combat/movement (shared client + server)
 packages/netcode       → Clock sync, input buffer, serializer (shared)
@@ -55,7 +55,7 @@ npm run db:studio        # open Drizzle Studio (in apps/server)
 - Single region, no CDN, no Docker
 - PostgreSQL runs locally (port 5432)
 - Vite dev server at `http://localhost:3001` (proxies `/api/*` to the global server)
-- Global server (Hono) at `http://localhost:3002`
+- Global server (NestJS) at `http://localhost:3002`
 - Game server WS at `ws://localhost:3003`
 
 ## Code Conventions
@@ -67,7 +67,7 @@ npm run db:studio        # open Drizzle Studio (in apps/server)
 - Character stats and frame data in `packages/shared-types/game-config.ts`
 - Drizzle schema in `apps/server/src/db/schema.ts`
 - Better Auth config in `apps/server/src/lib/auth.ts`
-- Hono route handlers in `apps/server/src/routes/`
+- NestJS controllers in `apps/server/src/routes/`
 
 ## Key Flows
 

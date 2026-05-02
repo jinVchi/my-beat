@@ -1,36 +1,44 @@
-import { Hono } from "hono";
+import { Body, Controller, Post, Res } from "@nestjs/common";
 import { db } from "../db/index.js";
 import { playerItems } from "../db/schema.js";
+import type { StatusResponse } from "../lib/request.js";
 
-export const itemsBatchRoute = new Hono();
+type ItemsBatchBody = {
+  items?: Array<{
+    playerId: string;
+    itemId: string;
+    roomId: string;
+    pickedUpAt: number;
+  }>;
+};
 
-itemsBatchRoute.post("/", async (c) => {
-  const body = (await c.req.json().catch(() => null)) as {
-    items?: Array<{
-      playerId: string;
-      itemId: string;
-      roomId: string;
-      pickedUpAt: number;
-    }>;
-  } | null;
+@Controller("api/items/batch")
+export class ItemsBatchController {
+  @Post()
+  async saveBatch(
+    @Body() body: ItemsBatchBody | null,
+    @Res({ passthrough: true }) res: StatusResponse,
+  ) {
+    const items = body?.items;
+    if (!Array.isArray(items) || items.length === 0) {
+      res.status(400);
+      return { error: "No items provided" };
+    }
 
-  const items = body?.items;
-  if (!Array.isArray(items) || items.length === 0) {
-    return c.json({ error: "No items provided" }, 400);
+    try {
+      await db.insert(playerItems).values(
+        items.map((item) => ({
+          playerId: item.playerId,
+          itemId: item.itemId,
+          roomId: item.roomId,
+          pickedUpAt: new Date(item.pickedUpAt),
+        })),
+      );
+      return { saved: items.length };
+    } catch (e) {
+      console.error("Failed to save items:", e);
+      res.status(500);
+      return { error: "Internal server error" };
+    }
   }
-
-  try {
-    await db.insert(playerItems).values(
-      items.map((item) => ({
-        playerId: item.playerId,
-        itemId: item.itemId,
-        roomId: item.roomId,
-        pickedUpAt: new Date(item.pickedUpAt),
-      })),
-    );
-    return c.json({ saved: items.length });
-  } catch (e) {
-    console.error("Failed to save items:", e);
-    return c.json({ error: "Internal server error" }, 500);
-  }
-});
+}

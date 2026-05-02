@@ -1,38 +1,43 @@
 import "dotenv/config";
-import { serve } from "@hono/node-server";
-import { Hono } from "hono";
-import { cors } from "hono/cors";
+import "reflect-metadata";
+import type { IncomingMessage, ServerResponse } from "node:http";
+import { NestFactory } from "@nestjs/core";
+import { toNodeHandler } from "better-auth/node";
+import { AppModule } from "./app.module.js";
 import { auth } from "./lib/auth.js";
-import { authVerifyRoute } from "./routes/auth-verify.js";
-import { gameTokenRoute } from "./routes/game-token.js";
-import { matchmakingRoute } from "./routes/matchmaking.js";
-import { itemsBatchRoute } from "./routes/items-batch.js";
 
 const PORT = Number(process.env.PORT ?? 3002);
 const WEB_ORIGIN = process.env.WEB_ORIGIN ?? "http://localhost:3001";
 
-const app = new Hono();
+type ExpressRequest = IncomingMessage & {
+  originalUrl?: string;
+};
 
-app.use(
-  "*",
-  cors({
+function isBetterAuthRoute(req: ExpressRequest): boolean {
+  const path = new URL(req.originalUrl ?? req.url ?? "/", "http://localhost").pathname;
+  return path.startsWith("/api/auth/") && path !== "/api/auth/verify";
+}
+
+async function bootstrap(): Promise<void> {
+  const app = await NestFactory.create(AppModule);
+  const betterAuthHandler = toNodeHandler(auth);
+
+  app.enableCors({
     origin: [WEB_ORIGIN],
     credentials: true,
-  }),
-);
+  });
 
-// Our verify route sits above Better Auth's catch-all
-app.route("/api/auth/verify", authVerifyRoute);
+  app.use((req: ExpressRequest, res: ServerResponse, next: () => void) => {
+    if (!isBetterAuthRoute(req)) {
+      next();
+      return;
+    }
 
-// Better Auth handles everything else under /api/auth/*
-app.on(["GET", "POST"], "/api/auth/*", (c) => auth.handler(c.req.raw));
+    void betterAuthHandler(req, res);
+  });
 
-app.route("/api/game-token", gameTokenRoute);
-app.route("/api/matchmaking", matchmakingRoute);
-app.route("/api/items/batch", itemsBatchRoute);
+  await app.listen(PORT);
+  console.log(`Global server listening on http://localhost:${PORT}`);
+}
 
-app.get("/health", (c) => c.json({ ok: true }));
-
-serve({ fetch: app.fetch, port: PORT }, (info) => {
-  console.log(`Global server listening on http://localhost:${info.port}`);
-});
+void bootstrap();

@@ -4,6 +4,8 @@
     "lib": ["ES2022"],
     "outDir": "dist",
     "rootDir": "src",
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"]
