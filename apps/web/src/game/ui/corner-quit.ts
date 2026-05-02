@@ -1,11 +1,10 @@
 import Phaser from "phaser";
-import { WORLD_WIDTH } from "@my-beat/shared-types/game-config";
 
-/** Top-right × control to leave the battle scene (fixed depth above gameplay). */
+/** Top-right control to leave the battle scene (fixed depth above gameplay). */
 export function addCornerQuitButton(scene: Phaser.Scene, onQuit: () => void): void {
   const margin = 14;
   const btn = scene.add
-    .text(WORLD_WIDTH - margin, margin, "×", {
+    .text(scene.scale.width - margin, margin, "X", {
       fontFamily: "Arial Black",
       fontSize: "44px",
       color: "#ffffff",
@@ -13,6 +12,7 @@ export function addCornerQuitButton(scene: Phaser.Scene, onQuit: () => void): vo
       strokeThickness: 5,
     })
     .setOrigin(1, 0)
+    .setScrollFactor(0)
     .setDepth(10_000)
     .setInteractive({ useHandCursor: true });
 

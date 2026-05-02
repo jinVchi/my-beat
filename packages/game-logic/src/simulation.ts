@@ -35,6 +35,7 @@ export function simulateTick(state: RoomState): TickResult {
   return {
     state: {
       tick: state.tick + 1,
+      stageId: state.stageId,
       players,
       enemies,
       items: pickupResult.items,

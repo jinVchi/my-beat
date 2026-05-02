@@ -1,3 +1,5 @@
+import type { StageId } from "./game-config";
+
 // --- Input flags (bitfield) ---
 export const InputFlag = {
   UP: 1,
@@ -64,6 +66,7 @@ export type ItemState = {
 
 export type GameSnapshot = {
   tick: number;
+  stageId: StageId;
   players: PlayerState[];
   enemies: EnemyState[];
   items: ItemState[];

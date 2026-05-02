@@ -27,6 +27,10 @@ export class GameClient {
     this.callbacks = callbacks;
   }
 
+  setCallbacks(callbacks: GameClientCallbacks): void {
+    this.callbacks = callbacks;
+  }
+
   async connect(region: RegionId): Promise<void> {
     // Ask matchmaking for a room in this region
     const mmRes = await fetch("/api/matchmaking/join", {

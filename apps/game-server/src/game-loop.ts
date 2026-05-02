@@ -3,12 +3,6 @@ import type { RegionId } from "@my-beat/shared-types/game-config";
 import { nanoid } from "nanoid";
 import { Room } from "./room";
 
-const STAGE_1_ENEMIES = [
-  { x: 500, y: 540 },
-  { x: 700, y: 620 },
-  { x: 850, y: 560 },
-];
-
 const FLUSH_INTERVAL_MS = 30_000;
 
 export type RoomInfo = {
@@ -27,7 +21,7 @@ export class GameLoop {
 
   createRoom(region: RegionId): Room {
     const id = `${region.toLowerCase()}-${nanoid(8)}`;
-    const room = new Room(id, STAGE_1_ENEMIES);
+    const room = new Room(id);
     this.rooms.set(id, room);
     this.roomRegions.set(id, region);
     return room;

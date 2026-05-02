@@ -4,11 +4,32 @@ import Player from "../entities/Player";
 import Enemy from "../entities/Enemy";
 import DroppedItem from "../entities/DroppedItem";
 import { RemotePlayer } from "../entities/RemotePlayer";
-import { GameClient } from "../network/ws-client";
-import { InputFlag, type GameSnapshot, type PlayerState } from "@my-beat/shared-types/messages";
-import { FLOOR_TOP, FLOOR_BOTTOM } from "@my-beat/shared-types/game-config";
+import { GameClient, type GameClientCallbacks } from "../network/ws-client";
+import {
+  InputFlag,
+  type GameSnapshot,
+  type PlayerState,
+} from "@my-beat/shared-types/messages";
+import {
+  FLOOR_BOTTOM,
+  FLOOR_TOP,
+  WORLD_HEIGHT,
+  WORLD_RIGHT,
+  WORLD_WIDTH,
+  getStageConfig,
+  type StageConfig,
+  type StageId,
+} from "@my-beat/shared-types/game-config";
 import { addCornerQuitButton } from "../ui/corner-quit";
 import { getSelectedRegion } from "../state/region-store";
+
+type BattleSceneKey = "Game" | "Game2";
+
+type BattleSceneData = {
+  gameClient?: GameClient;
+  localPlayerId?: string | null;
+  snapshot?: GameSnapshot;
+};
 
 export default class Game extends Phaser.Scene {
   private player!: Player;
@@ -18,6 +39,11 @@ export default class Game extends Phaser.Scene {
   private depthSortGroup: Phaser.GameObjects.Container[] = [];
   private gameClient!: GameClient;
   private localPlayerId: string | null = null;
+  private carriedGameClient?: GameClient;
+  private carriedSnapshot?: GameSnapshot;
+  private carriedLocalPlayerId: string | null = null;
+  private isTransitioningBattleScene = false;
+  private cameraFollowingPlayer = false;
 
   private keys!: {
     W: Phaser.Input.Keyboard.Key;
@@ -27,8 +53,17 @@ export default class Game extends Phaser.Scene {
     J: Phaser.Input.Keyboard.Key;
   };
 
-  constructor() {
-    super("Game");
+  constructor(
+    sceneKey: BattleSceneKey = "Game",
+    private readonly expectedStageId: StageId = 1,
+  ) {
+    super(sceneKey);
+  }
+
+  init(data: BattleSceneData = {}) {
+    this.carriedGameClient = data.gameClient;
+    this.carriedLocalPlayerId = data.localPlayerId ?? null;
+    this.carriedSnapshot = data.snapshot;
   }
 
   create() {
@@ -37,9 +72,14 @@ export default class Game extends Phaser.Scene {
     this.remotePlayers = new Map();
     this.droppedItems = new Map();
     this.depthSortGroup = [];
-    this.localPlayerId = null;
+    this.localPlayerId = this.carriedLocalPlayerId;
+    this.isTransitioningBattleScene = false;
+    this.cameraFollowingPlayer = false;
 
-    this.drawBackground();
+    this.cameras.main.setBounds(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
+    this.drawBackground(getStageConfig(this.expectedStageId));
+    this.addStageTitle(getStageConfig(this.expectedStageId));
+    this.addGoArrow(getStageConfig(this.expectedStageId));
 
     this.keys = this.input.keyboard!.addKeys({
       W: Phaser.Input.Keyboard.KeyCodes.W,
@@ -49,7 +89,51 @@ export default class Game extends Phaser.Scene {
       J: Phaser.Input.Keyboard.KeyCodes.J,
     }) as typeof this.keys;
 
-    this.gameClient = new GameClient({
+    const callbacks = this.createClientCallbacks();
+    if (this.carriedGameClient) {
+      this.gameClient = this.carriedGameClient;
+      this.gameClient.setCallbacks(callbacks);
+    } else {
+      this.gameClient = new GameClient(callbacks);
+      const region = getSelectedRegion();
+      void this.gameClient.connect(region?.id ?? "JP");
+    }
+
+    addCornerQuitButton(this, () => this.changeScene());
+
+    this.events.once("shutdown", () => {
+      if (!this.isTransitioningBattleScene) {
+        this.gameClient.disconnect();
+      }
+    });
+    this.events.once("destroy", () => {
+      if (!this.isTransitioningBattleScene) {
+        this.gameClient.disconnect();
+      }
+    });
+
+    if (this.carriedSnapshot) {
+      this.applySnapshot(this.carriedSnapshot);
+    }
+
+    EventBus.emit("current-scene-ready", this);
+  }
+
+  update(_time: number, _delta: number) {
+    let inputFlags = 0;
+    if (this.keys.W.isDown) inputFlags |= InputFlag.UP;
+    if (this.keys.S.isDown) inputFlags |= InputFlag.DOWN;
+    if (this.keys.A.isDown) inputFlags |= InputFlag.LEFT;
+    if (this.keys.D.isDown) inputFlags |= InputFlag.RIGHT;
+    if (Phaser.Input.Keyboard.JustDown(this.keys.J))
+      inputFlags |= InputFlag.ATTACK | InputFlag.PICKUP;
+
+    this.gameClient.sendInput(inputFlags);
+    this.depthSort();
+  }
+
+  private createClientCallbacks(): GameClientCallbacks {
+    return {
       onJoined: (playerId, snapshot) => {
         this.localPlayerId = playerId;
         this.applySnapshot(snapshot);
@@ -68,29 +152,7 @@ export default class Game extends Phaser.Scene {
       onDisconnect: () => {
         console.log("Disconnected from server");
       },
-    });
-
-    const region = getSelectedRegion();
-    this.gameClient.connect(region?.id ?? "JP");
-    addCornerQuitButton(this, () => this.changeScene());
-
-    this.events.on("shutdown", () => this.gameClient.disconnect());
-    this.events.on("destroy", () => this.gameClient.disconnect());
-
-    EventBus.emit("current-scene-ready", this);
-  }
-
-  update(_time: number, _delta: number) {
-    let inputFlags = 0;
-    if (this.keys.W.isDown) inputFlags |= InputFlag.UP;
-    if (this.keys.S.isDown) inputFlags |= InputFlag.DOWN;
-    if (this.keys.A.isDown) inputFlags |= InputFlag.LEFT;
-    if (this.keys.D.isDown) inputFlags |= InputFlag.RIGHT;
-    if (Phaser.Input.Keyboard.JustDown(this.keys.J))
-      inputFlags |= InputFlag.ATTACK | InputFlag.PICKUP;
-
-    this.gameClient.sendInput(inputFlags);
-    this.depthSort();
+    };
   }
 
   private applySnapshot(snapshot: GameSnapshot): void {
@@ -100,12 +162,14 @@ export default class Game extends Phaser.Scene {
       return;
     }
 
-    // Update local player
+    if (this.transitionToStageScene(snapshot)) return;
+
     const localState = snapshot.players.find((p) => p.id === this.localPlayerId);
     if (localState) {
       if (!this.player) {
         this.player = new Player(this, localState.x, localState.y);
         this.depthSortGroup.push(this.player);
+        this.configureCameraFollow();
       }
       this.player.updateFromServer(
         localState.x,
@@ -116,7 +180,6 @@ export default class Game extends Phaser.Scene {
       );
     }
 
-    // Update remote players
     for (const ps of snapshot.players) {
       if (ps.id === this.localPlayerId) continue;
 
@@ -127,7 +190,6 @@ export default class Game extends Phaser.Scene {
       remote.updateFromServer(ps.x, ps.y, ps.facingRight, ps.isAttacking);
     }
 
-    // Remove players no longer in snapshot
     const activeIds = new Set(snapshot.players.map((p) => p.id));
     for (const [id] of this.remotePlayers) {
       if (!activeIds.has(id)) {
@@ -135,7 +197,6 @@ export default class Game extends Phaser.Scene {
       }
     }
 
-    // Update enemies
     for (const es of snapshot.enemies) {
       const idx = parseInt(es.id.split("-")[1]);
       let enemy = this.enemies[idx];
@@ -159,7 +220,6 @@ export default class Game extends Phaser.Scene {
       }
     }
 
-    // Update dropped items
     const items = snapshot.items ?? [];
     const activeItemIds = new Set<string>();
     for (const itemState of items) {
@@ -184,6 +244,32 @@ export default class Game extends Phaser.Scene {
     }
   }
 
+  private transitionToStageScene(snapshot: GameSnapshot): boolean {
+    const targetScene = this.getSceneKeyForStage(snapshot.stageId);
+    if (targetScene === this.scene.key) return false;
+
+    this.isTransitioningBattleScene = true;
+    this.scene.start(targetScene, {
+      gameClient: this.gameClient,
+      localPlayerId: this.localPlayerId,
+      snapshot,
+    } satisfies BattleSceneData);
+    return true;
+  }
+
+  private getSceneKeyForStage(stageId: StageId): BattleSceneKey {
+    return stageId === 2 ? "Game2" : "Game";
+  }
+
+  private configureCameraFollow(): void {
+    if (this.cameraFollowingPlayer) return;
+
+    const camera = this.cameras.main;
+    camera.startFollow(this.player, false, 0.14, 0.14);
+    camera.setDeadzone(640, WORLD_HEIGHT);
+    this.cameraFollowingPlayer = true;
+  }
+
   private addRemotePlayer(ps: PlayerState): RemotePlayer {
     const remote = new RemotePlayer(this, ps.x, ps.y, ps.id);
     this.remotePlayers.set(ps.id, remote);
@@ -199,48 +285,90 @@ export default class Game extends Phaser.Scene {
     }
   }
 
-  private drawBackground() {
+  private drawBackground(stage: StageConfig) {
     const g = this.add.graphics();
 
-    g.fillStyle(0x4488cc);
-    g.fillRect(0, 0, 1024, 300);
+    g.fillStyle(stage.skyColor);
+    g.fillRect(0, 0, WORLD_WIDTH, 300);
 
-    g.fillStyle(0x334455);
-    g.fillRect(0, 200, 120, 100);
-    g.fillRect(100, 170, 80, 130);
-    g.fillRect(200, 210, 100, 90);
-    g.fillRect(320, 180, 60, 120);
-    g.fillRect(400, 200, 140, 100);
-    g.fillRect(560, 190, 70, 110);
-    g.fillRect(650, 210, 110, 90);
-    g.fillRect(780, 175, 90, 125);
-    g.fillRect(890, 200, 134, 100);
+    g.fillStyle(stage.skylineColor);
+    let x = -20;
+    const widths = [120, 80, 110, 70, 150, 90, 130, 100];
+    const heights = [100, 130, 90, 120, 105, 140, 85, 125];
+    for (let i = 0; x < WORLD_WIDTH; i++) {
+      const width = widths[i % widths.length];
+      const height = heights[i % heights.length];
+      g.fillRect(x, 300 - height, width, height);
+      x += width + 10;
+    }
 
-    g.fillStyle(0x666655);
-    g.fillRect(0, 300, 1024, 150);
+    g.fillStyle(stage.streetColor);
+    g.fillRect(0, 300, WORLD_WIDTH, 150);
 
     g.lineStyle(1, 0x555544, 0.4);
     for (let row = 0; row < 5; row++) {
       const y = 300 + row * 30;
-      g.strokeLineShape(new Phaser.Geom.Line(0, y, 1024, y));
+      g.strokeLineShape(new Phaser.Geom.Line(0, y, WORLD_WIDTH, y));
       const offset = row % 2 === 0 ? 0 : 30;
-      for (let col = offset; col < 1024; col += 60) {
+      for (let col = offset; col < WORLD_WIDTH; col += 60) {
         g.strokeLineShape(new Phaser.Geom.Line(col, y, col, y + 30));
       }
     }
 
-    g.fillStyle(0x888877);
-    g.fillRect(0, FLOOR_TOP, 1024, FLOOR_BOTTOM - FLOOR_TOP + 28);
+    g.fillStyle(stage.floorColor);
+    g.fillRect(0, FLOOR_TOP, WORLD_WIDTH, FLOOR_BOTTOM - FLOOR_TOP + 28);
 
-    g.fillStyle(0x999988);
-    g.fillRect(0, FLOOR_TOP, 1024, 12);
+    g.fillStyle(stage.floorHighlightColor);
+    g.fillRect(0, FLOOR_TOP, WORLD_WIDTH, 12);
 
-    g.lineStyle(2, 0xaaaa88, 0.3);
-    for (let x = 0; x < 1024; x += 80) {
-      g.strokeLineShape(new Phaser.Geom.Line(x, 600, x + 40, 600));
+    g.lineStyle(2, stage.floorHighlightColor, 0.3);
+    for (let floorX = 0; floorX < WORLD_WIDTH; floorX += 80) {
+      g.strokeLineShape(new Phaser.Geom.Line(floorX, 600, floorX + 40, 600));
     }
 
     g.setDepth(-1);
+  }
+
+  private addStageTitle(stage: StageConfig): void {
+    this.add
+      .text(18, 16, stage.name, {
+        fontSize: "24px",
+        color: "#ffffff",
+        fontFamily: "Arial Black",
+        stroke: "#000000",
+        strokeThickness: 5,
+      })
+      .setScrollFactor(0)
+      .setDepth(10_000);
+  }
+
+  private addGoArrow(stage: StageConfig): void {
+    if (!stage.hasExit) return;
+
+    const arrow = this.add.container(WORLD_RIGHT - 54, FLOOR_TOP + 118);
+    const label = this.add
+      .text(0, -52, "GO", {
+        fontSize: "30px",
+        color: "#ffff66",
+        fontFamily: "Arial Black",
+        stroke: "#000000",
+        strokeThickness: 6,
+      })
+      .setOrigin(0.5, 0.5);
+    const head = this.add.triangle(0, 0, -24, -30, -24, 30, 34, 0, 0xffff00);
+    head.setStrokeStyle(4, 0x000000);
+
+    arrow.add([label, head]);
+    arrow.setDepth(9_000);
+
+    this.tweens.add({
+      targets: arrow,
+      x: WORLD_RIGHT - 28,
+      duration: 450,
+      yoyo: true,
+      repeat: -1,
+      ease: "Sine.easeInOut",
+    });
   }
 
   private depthSort() {

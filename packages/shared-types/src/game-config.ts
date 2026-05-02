@@ -31,12 +31,57 @@ export const ENEMY_ATTACK_DURATION = 200;
 export const ENEMY_ATTACK_COOLDOWN = 1800;
 
 // World bounds
-export const WORLD_WIDTH = 1024;
+export const WORLD_WIDTH = 2048;
 export const WORLD_HEIGHT = 768;
 export const FLOOR_TOP = 450;
 export const FLOOR_BOTTOM = 740;
 export const WORLD_LEFT = 30;
-export const WORLD_RIGHT = 994;
+export const WORLD_RIGHT = WORLD_WIDTH - 30;
+
+// Stages
+export const STAGES = [
+  {
+    id: 1,
+    name: "Downtown Stretch",
+    skyColor: 0x4488cc,
+    skylineColor: 0x334455,
+    streetColor: 0x666655,
+    floorColor: 0x888877,
+    floorHighlightColor: 0x999988,
+    hasExit: true,
+    enemies: [
+      { x: 720, y: 540 },
+      { x: 1040, y: 620 },
+      { x: 1440, y: 560 },
+    ],
+  },
+  {
+    id: 2,
+    name: "Neon Backstreet",
+    skyColor: 0x2b2240,
+    skylineColor: 0x1f3f4a,
+    streetColor: 0x2d3238,
+    floorColor: 0x3f5060,
+    floorHighlightColor: 0x6fb6c8,
+    hasExit: false,
+    enemies: [
+      { x: 560, y: 530 },
+      { x: 820, y: 630 },
+      { x: 1080, y: 560 },
+      { x: 1360, y: 650 },
+      { x: 1640, y: 575 },
+    ],
+  },
+] as const;
+
+export type StageId = (typeof STAGES)[number]["id"];
+export type StageConfig = (typeof STAGES)[number];
+
+export const DEFAULT_STAGE_ID: StageId = 1;
+
+export function getStageConfig(stageId: StageId): StageConfig {
+  return STAGES.find((stage) => stage.id === stageId) ?? STAGES[0];
+}
 
 // Server
 export const SERVER_TICK_RATE = 60;

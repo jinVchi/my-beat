@@ -3,12 +3,16 @@ import { simulateTick } from "@my-beat/game-logic";
 import type { RoomState, SimPlayerState, SimEnemyState, SimItemState } from "@my-beat/game-logic/types";
 import { encodeMessage } from "@my-beat/netcode/serializer";
 import {
+  DEFAULT_STAGE_ID,
   MAX_PLAYERS_PER_ROOM,
   PLAYER_MAX_HEALTH,
   ENEMY_DEFAULT_MAX_HEALTH,
   ITEM_IDS,
+  WORLD_LEFT,
+  WORLD_RIGHT,
+  getStageConfig,
 } from "@my-beat/shared-types/game-config";
-import type { ItemId } from "@my-beat/shared-types/game-config";
+import type { ItemId, StageId } from "@my-beat/shared-types/game-config";
 import {
   InputFlag,
   ServerMsgType,
@@ -42,23 +46,22 @@ export class Room {
   private inputQueue = new Map<string, ClientPlayerInput[]>();
   private lastProcessedSeq = new Map<string, number>();
   private reservedSlots = new Map<string, number>();
-  private enemySpawns: Array<{ x: number; y: number }>;
   private itemCounter = 0;
   pendingWrites: PendingItemWrite[] = [];
 
-  constructor(id: string, enemies: Array<{ x: number; y: number }>) {
+  constructor(id: string) {
     this.id = id;
-    this.enemySpawns = enemies;
     this.state = {
       tick: 0,
+      stageId: DEFAULT_STAGE_ID,
       players: new Map(),
-      enemies: this.createEnemies(),
+      enemies: this.createEnemies(DEFAULT_STAGE_ID),
       items: [],
     };
   }
 
-  private createEnemies(): SimEnemyState[] {
-    return this.enemySpawns.map((pos, i): SimEnemyState => ({
+  private createEnemies(stageId: StageId): SimEnemyState[] {
+    return getStageConfig(stageId).enemies.map((pos, i): SimEnemyState => ({
       id: `enemy-${i}`,
       x: pos.x,
       y: pos.y,
@@ -75,7 +78,8 @@ export class Room {
 
   private resetRoom(): void {
     this.state.tick = 0;
-    this.state.enemies = this.createEnemies();
+    this.state.stageId = DEFAULT_STAGE_ID;
+    this.state.enemies = this.createEnemies(DEFAULT_STAGE_ID);
     this.state.items = [];
     this.itemCounter = 0;
   }
@@ -208,6 +212,7 @@ export class Room {
     // Run simulation (handles combat + pickups)
     const { state, pickups } = simulateTick(this.state);
     this.state = state;
+    this.advanceStageIfExitReached();
 
     // Record picked-up items for DB flush
     for (const pickup of pickups) {
@@ -230,6 +235,42 @@ export class Room {
     }
 
     this.broadcastSnapshot();
+  }
+
+  private advanceStageIfExitReached(): void {
+    const currentStage = getStageConfig(this.state.stageId);
+    if (!currentStage.hasExit) return;
+
+    const reachedExit = [...this.state.players.values()].some(
+      (player) => player.x >= WORLD_RIGHT - 1,
+    );
+    if (!reachedExit) return;
+
+    const nextStageId = (this.state.stageId + 1) as StageId;
+    const nextStage = getStageConfig(nextStageId);
+    if (nextStage.id === this.state.stageId) return;
+
+    const players = new Map<string, SimPlayerState>();
+    for (const [id, player] of this.state.players) {
+      players.set(id, {
+        ...player,
+        x: WORLD_LEFT + 120,
+        y: 580,
+        facingRight: true,
+        isAttacking: false,
+        attackTimer: 0,
+        inputFlags: 0,
+      });
+    }
+
+    this.state = {
+      tick: this.state.tick,
+      stageId: nextStage.id,
+      players,
+      enemies: this.createEnemies(nextStage.id),
+      items: [],
+    };
+    this.itemCounter = 0;
   }
 
   private spawnRandomItem(x: number, y: number): void {
@@ -286,6 +327,7 @@ export class Room {
 
     return {
       tick: this.state.tick,
+      stageId: this.state.stageId,
       players,
       enemies: this.state.enemies.map((e) => ({
         id: e.id,
