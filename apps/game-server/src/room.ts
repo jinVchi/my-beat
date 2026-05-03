@@ -133,8 +133,12 @@ export class Room {
       facingRight: true,
       health: PLAYER_MAX_HEALTH,
       isAttacking: false,
+      attackType: null,
       attackTimer: 0,
       attackCooldownTimer: 0,
+      isJumping: false,
+      jumpTimer: 0,
+      jumpOffset: 0,
       inputFlags: 0,
     };
 
@@ -197,7 +201,14 @@ export class Room {
       let mergedFlags = queue[queue.length - 1].inputFlags;
       let maxSeq = 0;
       for (const input of queue) {
-        mergedFlags |= input.inputFlags & (InputFlag.ATTACK | InputFlag.PICKUP);
+        mergedFlags |=
+          input.inputFlags &
+          (
+            InputFlag.ATTACK |
+            InputFlag.HEAVY_ATTACK |
+            InputFlag.PICKUP |
+            InputFlag.JUMP
+          );
         if (input.seq > maxSeq) maxSeq = input.seq;
       }
 
@@ -258,7 +269,11 @@ export class Room {
         y: 580,
         facingRight: true,
         isAttacking: false,
+        attackType: null,
         attackTimer: 0,
+        isJumping: false,
+        jumpTimer: 0,
+        jumpOffset: 0,
         inputFlags: 0,
       });
     }
@@ -357,6 +372,10 @@ export class Room {
       facingRight: p.facingRight,
       health: p.health,
       isAttacking: p.isAttacking,
+      attackType: p.attackType,
+      attackTimer: p.attackTimer,
+      isJumping: p.isJumping,
+      jumpOffset: p.jumpOffset,
     };
   }
 

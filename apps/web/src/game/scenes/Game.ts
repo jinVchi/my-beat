@@ -6,6 +6,7 @@ import DroppedItem from "../entities/DroppedItem";
 import { RemotePlayer } from "../entities/RemotePlayer";
 import { GameClient, type GameClientCallbacks } from "../network/ws-client";
 import {
+  AttackType,
   InputFlag,
   type GameSnapshot,
   type PlayerState,
@@ -51,6 +52,8 @@ export default class Game extends Phaser.Scene {
     S: Phaser.Input.Keyboard.Key;
     D: Phaser.Input.Keyboard.Key;
     J: Phaser.Input.Keyboard.Key;
+    K: Phaser.Input.Keyboard.Key;
+    L: Phaser.Input.Keyboard.Key;
   };
 
   constructor(
@@ -87,6 +90,8 @@ export default class Game extends Phaser.Scene {
       S: Phaser.Input.Keyboard.KeyCodes.S,
       D: Phaser.Input.Keyboard.KeyCodes.D,
       J: Phaser.Input.Keyboard.KeyCodes.J,
+      K: Phaser.Input.Keyboard.KeyCodes.K,
+      L: Phaser.Input.Keyboard.KeyCodes.L,
     }) as typeof this.keys;
 
     const callbacks = this.createClientCallbacks();
@@ -125,8 +130,18 @@ export default class Game extends Phaser.Scene {
     if (this.keys.S.isDown) inputFlags |= InputFlag.DOWN;
     if (this.keys.A.isDown) inputFlags |= InputFlag.LEFT;
     if (this.keys.D.isDown) inputFlags |= InputFlag.RIGHT;
-    if (Phaser.Input.Keyboard.JustDown(this.keys.J))
+    if (Phaser.Input.Keyboard.JustDown(this.keys.J)) {
       inputFlags |= InputFlag.ATTACK | InputFlag.PICKUP;
+      this.player?.showAttackPreview(AttackType.LIGHT);
+    }
+    if (Phaser.Input.Keyboard.JustDown(this.keys.K)) {
+      inputFlags |= InputFlag.JUMP;
+      this.player?.showJumpPreview();
+    }
+    if (Phaser.Input.Keyboard.JustDown(this.keys.L)) {
+      inputFlags |= InputFlag.HEAVY_ATTACK;
+      this.player?.showAttackPreview(AttackType.HEAVY);
+    }
 
     this.gameClient.sendInput(inputFlags);
     this.smoothEntities(_delta);
@@ -177,6 +192,9 @@ export default class Game extends Phaser.Scene {
         localState.y,
         localState.facingRight,
         localState.isAttacking,
+        localState.attackType,
+        localState.attackTimer,
+        localState.jumpOffset,
         localState.health,
       );
     }
@@ -188,7 +206,15 @@ export default class Game extends Phaser.Scene {
       if (!remote) {
         remote = this.addRemotePlayer(ps);
       }
-      remote.updateFromServer(ps.x, ps.y, ps.facingRight, ps.isAttacking);
+      remote.updateFromServer(
+        ps.x,
+        ps.y,
+        ps.facingRight,
+        ps.isAttacking,
+        ps.attackType,
+        ps.attackTimer,
+        ps.jumpOffset,
+      );
     }
 
     const activeIds = new Set(snapshot.players.map((p) => p.id));

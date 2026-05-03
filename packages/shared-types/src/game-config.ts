@@ -13,6 +13,17 @@ export const ATTACK_RANGE_X = 60;
 export const ATTACK_RANGE_Y = 30;
 export const ATTACK_HITBOX_WIDTH = 50;
 
+export const HEAVY_ATTACK_DURATION = 350;
+export const HEAVY_ATTACK_COOLDOWN = 650;
+export const HEAVY_ATTACK_DAMAGE = 40;
+export const HEAVY_ATTACK_RANGE_X = 70;
+export const HEAVY_ATTACK_RANGE_Y = 34;
+export const HEAVY_ATTACK_HITBOX_WIDTH = 64;
+
+// Jump is rendered as vertical lift above the beat'em-up floor lane.
+export const JUMP_DURATION = 520;
+export const JUMP_HEIGHT = 78;
+
 // Enemy
 export const ENEMY_BODY_WIDTH = 40;
 export const ENEMY_BODY_HEIGHT = 64;

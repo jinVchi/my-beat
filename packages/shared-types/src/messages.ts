@@ -8,7 +8,16 @@ export const InputFlag = {
   RIGHT: 8,
   ATTACK: 16,
   PICKUP: 32,
+  HEAVY_ATTACK: 64,
+  JUMP: 128,
 } as const;
+
+export const AttackType = {
+  LIGHT: 1,
+  HEAVY: 2,
+} as const;
+
+export type AttackType = (typeof AttackType)[keyof typeof AttackType];
 
 // --- Client → Server messages ---
 export const ClientMsgType = {
@@ -43,6 +52,10 @@ export type PlayerState = {
   facingRight: boolean;
   health: number;
   isAttacking: boolean;
+  attackType: AttackType | null;
+  attackTimer: number;
+  isJumping: boolean;
+  jumpOffset: number;
 };
 
 export type EnemyState = {

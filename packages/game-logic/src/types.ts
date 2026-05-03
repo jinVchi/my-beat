@@ -1,4 +1,5 @@
 import type { ItemId, StageId } from "@my-beat/shared-types/game-config";
+import type { AttackType } from "@my-beat/shared-types/messages";
 
 export type SimPlayerState = {
   id: string;
@@ -7,8 +8,12 @@ export type SimPlayerState = {
   facingRight: boolean;
   health: number;
   isAttacking: boolean;
+  attackType: AttackType | null;
   attackTimer: number;
   attackCooldownTimer: number;
+  isJumping: boolean;
+  jumpTimer: number;
+  jumpOffset: number;
   inputFlags: number;
 };
 

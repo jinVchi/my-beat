@@ -1,6 +1,7 @@
 import { SERVER_TICK_MS } from "@my-beat/shared-types/game-config";
 import type { RoomState, TickResult } from "./types";
 import { applyMovement } from "./movement";
+import { updateJump } from "./jump";
 import { tryStartAttack, tickAttackTimers, resolveAttackHits } from "./combat";
 import { updateEnemies } from "./enemy-ai";
 import { processPickups } from "./items";
@@ -15,6 +16,7 @@ export function simulateTick(state: RoomState): TickResult {
 
     // Movement
     p = applyMovement(p, deltaMs);
+    p = updateJump(p, deltaMs);
 
     // Combat
     p = tryStartAttack(p);

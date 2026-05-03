@@ -6,6 +6,11 @@ Read and follow all files in skills/
 
 Server-authoritative multiplayer beat'em up web game. Players worldwide connect to regional game servers via WebSocket for low-latency combat. A single global server handles auth, matchmaking, and persistence.
 
+## Terminology
+
+- In gameplay and character-control requests, `PC` usually means `player character`.
+- If the request is about hardware, OS, desktop/browser environment, performance, or setup, `PC` may mean `personal computer`; use the surrounding context to disambiguate.
+
 ## Tech Stack
 
 - **Frontend:** Vite + React + Phaser 3, TypeScript
