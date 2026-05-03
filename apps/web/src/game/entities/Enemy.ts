@@ -23,12 +23,16 @@ export default class Enemy extends Phaser.GameObjects.Container {
   private attackFx?: Phaser.GameObjects.Rectangle;
   private wasAttacking = false;
   private flashingHit = false;
+  private targetX: number;
+  private targetY: number;
 
   constructor(scene: Phaser.Scene, x: number, y: number, maxHealth = 100) {
     super(scene, x, y);
 
     this.maxHealth = maxHealth;
     this.health = maxHealth;
+    this.targetX = x;
+    this.targetY = y;
 
     this.bodyRect = scene.add.rectangle(
       0,
@@ -87,8 +91,8 @@ export default class Enemy extends Phaser.GameObjects.Container {
   ): void {
     if (this.isDead) return;
 
-    this.x = x;
-    this.y = y;
+    this.targetX = x;
+    this.targetY = y;
 
     const previousHealth = this.health;
     this.health = health;
@@ -108,6 +112,27 @@ export default class Enemy extends Phaser.GameObjects.Container {
 
     if (isDead && !this.isDead) {
       this.die();
+    }
+  }
+
+  smoothUpdate(deltaMs: number): void {
+    if (this.isDead) return;
+
+    const dx = this.targetX - this.x;
+    const dy = this.targetY - this.y;
+    const distanceSq = dx * dx + dy * dy;
+
+    if (distanceSq > 240 * 240) {
+      this.setPosition(this.targetX, this.targetY);
+      return;
+    }
+
+    const alpha = 1 - Math.exp(-deltaMs / 30);
+    this.x += dx * alpha;
+    this.y += dy * alpha;
+
+    if (Math.abs(dx) < 0.05 && Math.abs(dy) < 0.05) {
+      this.setPosition(this.targetX, this.targetY);
     }
   }
 

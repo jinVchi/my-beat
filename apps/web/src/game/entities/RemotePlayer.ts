@@ -8,11 +8,15 @@ export class RemotePlayer extends Phaser.GameObjects.Container {
   private bodyRect: Phaser.GameObjects.Rectangle;
   private directionIndicator: Phaser.GameObjects.Triangle;
   private label: Phaser.GameObjects.Text;
+  private targetX: number;
+  private targetY: number;
   playerId: string;
 
   constructor(scene: Phaser.Scene, x: number, y: number, playerId: string) {
     super(scene, x, y);
     this.playerId = playerId;
+    this.targetX = x;
+    this.targetY = y;
 
     // Green tint to distinguish from local player
     this.bodyRect = scene.add.rectangle(
@@ -57,8 +61,8 @@ export class RemotePlayer extends Phaser.GameObjects.Container {
     facingRight: boolean,
     isAttacking: boolean,
   ): void {
-    this.x = x;
-    this.y = y;
+    this.targetX = x;
+    this.targetY = y;
 
     if (facingRight) {
       this.directionIndicator.setPosition(PLAYER_BODY_WIDTH / 2 + 6, 0);
@@ -69,5 +73,24 @@ export class RemotePlayer extends Phaser.GameObjects.Container {
     }
 
     this.bodyRect.setFillStyle(isAttacking ? 0x66ff99 : 0x33cc66);
+  }
+
+  smoothUpdate(deltaMs: number): void {
+    const dx = this.targetX - this.x;
+    const dy = this.targetY - this.y;
+    const distanceSq = dx * dx + dy * dy;
+
+    if (distanceSq > 240 * 240) {
+      this.setPosition(this.targetX, this.targetY);
+      return;
+    }
+
+    const alpha = 1 - Math.exp(-deltaMs / 30);
+    this.x += dx * alpha;
+    this.y += dy * alpha;
+
+    if (Math.abs(dx) < 0.05 && Math.abs(dy) < 0.05) {
+      this.setPosition(this.targetX, this.targetY);
+    }
   }
 }

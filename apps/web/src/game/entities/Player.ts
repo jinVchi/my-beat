@@ -23,9 +23,13 @@ export default class Player extends Phaser.GameObjects.Container {
   private health = PLAYER_MAX_HEALTH;
   private maxHealth = PLAYER_MAX_HEALTH;
   private isHitFlashing = false;
+  private targetX: number;
+  private targetY: number;
 
   constructor(scene: Phaser.Scene, x: number, y: number) {
     super(scene, x, y);
+    this.targetX = x;
+    this.targetY = y;
 
     this.bodyRect = scene.add.rectangle(0, 0, BODY_WIDTH, BODY_HEIGHT, COLOR_IDLE);
     this.bodyRect.setStrokeStyle(2, 0xffffff);
@@ -83,8 +87,8 @@ export default class Player extends Phaser.GameObjects.Container {
   ): void {
     if (!this.active) return;
 
-    this.x = x;
-    this.y = y;
+    this.targetX = x;
+    this.targetY = y;
     this.facingRight = facingRight;
 
     if (facingRight) {
@@ -109,6 +113,25 @@ export default class Player extends Phaser.GameObjects.Container {
       } else {
         this.bodyRect.setFillStyle(COLOR_IDLE);
       }
+    }
+  }
+
+  smoothUpdate(deltaMs: number): void {
+    const dx = this.targetX - this.x;
+    const dy = this.targetY - this.y;
+    const distanceSq = dx * dx + dy * dy;
+
+    if (distanceSq > 240 * 240) {
+      this.setPosition(this.targetX, this.targetY);
+      return;
+    }
+
+    const alpha = 1 - Math.exp(-deltaMs / 30);
+    this.x += dx * alpha;
+    this.y += dy * alpha;
+
+    if (Math.abs(dx) < 0.05 && Math.abs(dy) < 0.05) {
+      this.setPosition(this.targetX, this.targetY);
     }
   }
 

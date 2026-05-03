@@ -67,7 +67,19 @@ npm run db:studio        # open Drizzle Studio (in apps/server)
 - Character stats and frame data in `packages/shared-types/game-config.ts`
 - Drizzle schema in `apps/server/src/db/schema.ts`
 - Better Auth config in `apps/server/src/lib/auth.ts`
+- NestJS bootstrap in `apps/server/src/index.ts`
+- NestJS app module in `apps/server/src/app.module.ts`
 - NestJS controllers in `apps/server/src/routes/`
+- Shared server request/auth helpers in `apps/server/src/lib/`
+
+## NestJS Server Notes
+
+- Keep the global server as a NestJS HTTP app. Do not add Hono back.
+- Register global server routes as NestJS controllers under `apps/server/src/routes/` and add them to `AppModule`.
+- Better Auth owns `/api/auth/*` through `better-auth/node` middleware in `apps/server/src/index.ts`.
+- The custom `GET /api/auth/verify` route must remain a NestJS controller route before the Better Auth catch-all behavior.
+- Use `@Req()` plus `getSessionFromRequest()` from `apps/server/src/lib/request.ts` when a controller needs the current Better Auth session.
+- Keep route response shapes stable for the web client and game server: `/api/game-token`, `/api/matchmaking/join`, `/api/items/batch`, and `/api/auth/verify`.
 
 ## Key Flows
 

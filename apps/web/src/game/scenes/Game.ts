@@ -129,6 +129,7 @@ export default class Game extends Phaser.Scene {
       inputFlags |= InputFlag.ATTACK | InputFlag.PICKUP;
 
     this.gameClient.sendInput(inputFlags);
+    this.smoothEntities(_delta);
     this.depthSort();
   }
 
@@ -375,6 +376,24 @@ export default class Game extends Phaser.Scene {
     this.depthSortGroup = this.depthSortGroup.filter((obj) => obj.active);
     for (const obj of this.depthSortGroup) {
       obj.setDepth(obj.y);
+    }
+  }
+
+  private smoothEntities(deltaMs: number): void {
+    if (this.player?.active) {
+      this.player.smoothUpdate(deltaMs);
+    }
+
+    for (const remote of this.remotePlayers.values()) {
+      if (remote.active) {
+        remote.smoothUpdate(deltaMs);
+      }
+    }
+
+    for (const enemy of this.enemies) {
+      if (enemy?.active) {
+        enemy.smoothUpdate(deltaMs);
+      }
     }
   }
 
