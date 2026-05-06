@@ -6,7 +6,6 @@
     "rootDir": "src",
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
-    "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"]
     }

@@ -1,7 +1,7 @@
 import { encode, decode } from "@msgpack/msgpack";
 import type { ClientMessage, ServerMessage } from "@my-beat/shared-types/messages";
 
-export function encodeMessage(msg: ClientMessage | ServerMessage): Uint8Array {
+export function encodeMessage(msg: ClientMessage | ServerMessage): Uint8Array<ArrayBuffer> {
   return encode(msg);
 }
 
