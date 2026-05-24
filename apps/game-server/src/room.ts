@@ -32,7 +32,6 @@ export type PlayerConnection = {
 export type PendingItemWrite = {
   playerId: string;
   itemId: string;
-  roomId: string;
   pickedUpAt: number;
 };
 
@@ -230,7 +229,6 @@ export class Room {
       this.pendingWrites.push({
         playerId: pickup.playerId,
         itemId: pickup.itemType,
-        roomId: this.id,
         pickedUpAt: Date.now(),
       });
     }

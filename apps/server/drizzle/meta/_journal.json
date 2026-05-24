@@ -15,6 +15,13 @@
       "when": 1776261366214,
       "tag": "0001_shocking_network",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1778398496377,
+      "tag": "0002_remove_player_items_room_id",
+      "breakpoints": true
     }
   ]
 }

@@ -7,7 +7,6 @@ type ItemsBatchBody = {
   items?: Array<{
     playerId: string;
     itemId: string;
-    roomId: string;
     pickedUpAt: number;
   }>;
 };
@@ -30,7 +29,6 @@ export class ItemsBatchController {
         items.map((item) => ({
           playerId: item.playerId,
           itemId: item.itemId,
-          roomId: item.roomId,
           pickedUpAt: new Date(item.pickedUpAt),
         })),
       );

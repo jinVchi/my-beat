@@ -102,7 +102,7 @@ npm run db:studio        # open Drizzle Studio (in apps/server)
 1. Enemy drops item → added to room state in memory
 2. Player sees item via next WS state snapshot
 3. Item added to `pendingWrites` array
-4. Every 30s or on match end → game server POSTs to global server `/api/items/batch` → `db.items.insertMany(pendingWrites)`
+4. Every 30s or on match end → game server POSTs to global server `/api/items/batch` → global server inserts into `player_items`
 
 ### Reconnection
 

@@ -13,6 +13,5 @@ export const playerItems = pgTable("player_items", {
   id: serial("id").primaryKey(),
   playerId: text("player_id").notNull(),
   itemId: text("item_id").notNull(),
-  roomId: text("room_id").notNull(),
   pickedUpAt: timestamp("picked_up_at").notNull(),
 });
